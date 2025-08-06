@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 """
 jsearch - Bug Bounty Reconnaissance Tool
-A comprehensive subdomain discovery and JavaScript analysis tool
+A comprehensive subdomain discovery                  if output:
+                    line = output.strip()
+                    # Add [SUBDOMAIN] prefix for subfinder output
+                    if "subfinder subdomain discovery" in description.lower():
+                        if line and line.strip():
+                            print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {line}")
+                    else:
+                        print(line)  # Show live output     # Filter mantra banner if requested
+                    if filter_mantra_banner and "mantra secret analysis" in description.lower():
+                        # Only show lines that start with [+] (secrets found), skip [-] errors and banner
+                        if line and line.startswith('[+]'):
+                            print(line)JavaScript analysis tool
 """
 
 import argparse
@@ -424,8 +435,8 @@ class JSearch:
             try:
                 self.log(f"Trying command: {command}")
                 
-                # Use run_command_live to show real-time output (filtered for clean output)
-                output = self.run_command_live(command, "mantra secret analysis", filter_mantra_banner=True)
+                # Use run_command_live to show real-time output
+                output = self.run_command_live(command, "mantra secret analysis")
                 
                 if os.path.exists(output_file):
                     success = True
