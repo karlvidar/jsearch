@@ -313,15 +313,15 @@ class JSearch:
                             total_js_files_found += 1
                             print(f"{Colors.YELLOW}[JS FILE] {url}{Colors.END}")
                 
-                # Check for any stderr (warnings)
+                # Check for any stderr (warnings) - ignore gau config warnings
                 stderr = process.stderr.read()
-                if stderr and "warning" in stderr.lower():
+                if stderr and "warning" in stderr.lower() and "config" not in stderr.lower():
                     self.log(f"Warning from gau JS discovery for {clean_domain}: {stderr.strip()}", "WARNING")
                 
                 if js_files_for_domain > 0:
                     print(f"{Colors.GREEN}Found {js_files_for_domain} JS files for {clean_domain}{Colors.END}")
                 else:
-                    print(f"{Colors.GRAY}No JS files found for {clean_domain}{Colors.END}")
+                    print(f"{Colors.RED}No JS files found for {clean_domain}{Colors.END}")
                     
             except Exception as e:
                 self.log(f"Error running gau for {clean_domain}: {str(e)}", "ERROR")
