@@ -179,7 +179,7 @@ class JSearch:
         output_file = os.path.join(self.output_path, "subfinder_results.txt")
         command = f"subfinder -d {self.target_url} -o {output_file}"
         
-        self.run_command(command, "subfinder subdomain discovery")
+        self.run_command_live(command, "subfinder subdomain discovery")
         
         if os.path.exists(output_file):
             with open(output_file, 'r') as f:
@@ -362,7 +362,7 @@ class JSearch:
                 f.write(f"{domain}\n")
         
         command = f"katana -list {temp_file} -jc -o {output_file}"
-        self.run_command(command, "katana JS discovery")
+        self.run_command_live(command, "katana JS discovery")
         
         if os.path.exists(output_file):
             initial_count = len(self.js_files)
@@ -371,7 +371,7 @@ class JSearch:
                     js_file = line.strip()
                     if js_file and js_file.endswith('.js') and js_file not in self.js_files:
                         self.js_files.add(js_file)
-                        print(f"{Colors.YELLOW}[JS FILE] {js_file}{Colors.END}")
+                        # Don't print here since we already saw it in live output
             
             new_count = len(self.js_files) - initial_count
             self.log(f"Found {new_count} new JS files with katana", "SUCCESS")
@@ -413,60 +413,30 @@ class JSearch:
         success = False
         for command in commands_to_try:
             try:
-                # Add timeout to prevent hanging
-                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
+                self.log(f"Trying command: {command}")
                 
-                output_lines = []
-                timeout_count = 0
-                max_timeout = 60  # 60 seconds timeout
-                banner_lines = 0  # Track banner lines to skip
+                # Use a simpler approach with timeout
+                result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
                 
-                # Read output line by line with timeout
-                while True:
-                    try:
-                        output = process.stdout.readline()
-                        if output == '' and process.poll() is not None:
-                            break
-                        if output:
-                            line = output.strip()
-                            # Skip mantra banner lines
-                            if (banner_lines < 10 and 
-                                (line.startswith('███') or line.startswith('██') or 
-                                 '[Coded by' in line or '[Version' in line or 
-                                 'MANTRA' in line or line == '')):
-                                banner_lines += 1
-                                continue
-                            
-                            # Only show actual results, not banner
-                            if line and banner_lines >= 10:
-                                print(line)
-                            
-                            output_lines.append(output)
-                            timeout_count = 0  # Reset timeout if we get output
-                        else:
-                            time.sleep(1)
-                            timeout_count += 1
-                            if timeout_count >= max_timeout:
-                                self.log("Mantra process timeout - terminating", "WARNING")
-                                process.terminate()
-                                break
-                    except KeyboardInterrupt:
-                        process.terminate()
-                        break
-                
-                # Wait for process to complete
-                try:
-                    stdout, stderr = process.communicate(timeout=10)
-                    if stdout:
-                        output_lines.append(stdout)
-                except subprocess.TimeoutExpired:
-                    process.kill()
-                    self.log("Mantra process killed due to timeout", "WARNING")
-                
-                if os.path.exists(output_file):
+                if result.returncode == 0 and os.path.exists(output_file):
                     success = True
-                    break
                     
+                    # Show some output from mantra (without banner filtering for now)
+                    if result.stdout:
+                        lines = result.stdout.strip().split('\n')
+                        # Skip obvious banner lines but don't get stuck
+                        for line in lines[-10:]:  # Show last 10 lines which are likely results
+                            if line.strip() and not any(x in line for x in ['███', '██', 'MANTRA', '[Coded by']):
+                                print(f"{Colors.YELLOW}[MANTRA] {line.strip()}{Colors.END}")
+                    
+                    break
+                else:
+                    if result.stderr:
+                        self.log(f"Mantra stderr: {result.stderr[:200]}", "WARNING")
+                    
+            except subprocess.TimeoutExpired:
+                self.log(f"Mantra command timed out after 30 seconds", "WARNING")
+                continue
             except Exception as e:
                 self.log(f"Error running mantra: {str(e)}", "ERROR")
                 continue
