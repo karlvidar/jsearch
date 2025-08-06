@@ -187,7 +187,7 @@ class JSearch:
                     subdomain = line.strip()
                     if subdomain and subdomain not in self.subdomains:
                         self.subdomains.add(subdomain)
-                        print(f"{Colors.DARK_BLUE}{subdomain}{Colors.END}")
+                        # Don't print here since we already saw it in live output
             
             self.log(f"Found {len(self.subdomains)} subdomains with subfinder", "SUCCESS")
         else:
