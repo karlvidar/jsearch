@@ -181,7 +181,7 @@ class JSearch:
                     subdomain = line.strip()
                     if subdomain:
                         self.subdomains.add(subdomain)
-                        print(f"{Colors.DARK_BLUE}[SUBDOMAIN] {subdomain}{Colors.END}")
+                        print(f"{Colors.DARK_BLUE}{subdomain}{Colors.END}")
             
             self.log(f"Found {len(self.subdomains)} subdomains with subfinder", "SUCCESS")
         else:
@@ -500,39 +500,31 @@ class JSearch:
             return False
         
         try:
-            # Print progress overview
-            print(f"\n{Colors.BOLD}{Colors.BLUE}=== JSEARCH EXECUTION PLAN ==={Colors.END}")
-            print(f"{Colors.LIGHT_BLUE}1. Subdomain Discovery (subfinder + ffuf){Colors.END}")
-            print(f"{Colors.LIGHT_BLUE}2. Live Domain Check (httpx){Colors.END}")
-            print(f"{Colors.LIGHT_BLUE}3. JS File Discovery (gau + katana){Colors.END}")
-            print(f"{Colors.LIGHT_BLUE}4. Secret Analysis (mantra){Colors.END}")
-            print(f"{Colors.LIGHT_BLUE}5. Vulnerability Scanning (nuclei){Colors.END}")
-            print(f"{Colors.BOLD}{Colors.BLUE}==============================={Colors.END}\n")
             
             # Step 1: Discover subdomains
-            print(f"{Colors.BOLD}{Colors.BLUE}[1/5] SUBDOMAIN DISCOVERY{Colors.END}")
+            print(f"{Colors.BOLD}{Colors.BLUE}[1/5] Gathering Subdomains{Colors.END}")
             self.discover_subdomains_subfinder()
             self.discover_subdomains_ffuf()
             
             # Step 2: Check live domains
-            print(f"\n{Colors.BOLD}{Colors.BLUE}[2/5] LIVE DOMAIN CHECK{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.BLUE}[2/5] Checking Live Domains{Colors.END}")
             self.check_live_domains()
             
             # Step 3: Discover JS files
-            print(f"\n{Colors.BOLD}{Colors.BLUE}[3/5] JS FILE DISCOVERY{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.BLUE}[3/5] Discovering JS Files{Colors.END}")
             self.discover_js_files_gau()
             self.discover_js_files_katana()
             
             # Step 4: Analyze for secrets
-            print(f"\n{Colors.BOLD}{Colors.BLUE}[4/5] SECRET ANALYSIS{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.BLUE}[4/5] Analyzing for Secrets{Colors.END}")
             self.analyze_secrets_mantra()
             
             # Step 5: Optional nuclei scan
-            print(f"\n{Colors.BOLD}{Colors.BLUE}[5/5] VULNERABILITY SCANNING{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.BLUE}[5/5] Scanning for Vulnerabilities{Colors.END}")
             self.analyze_with_nuclei()
             
             # Step 6: Save results
-            print(f"\n{Colors.BOLD}{Colors.BLUE}FINALIZING RESULTS{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.BLUE}Finalizing Results{Colors.END}")
             self.save_final_output()
             self.print_summary()
             
@@ -547,7 +539,7 @@ class JSearch:
 
 def main():
     parser = argparse.ArgumentParser(
-        description="jsearch - Bug Bounty Reconnaissance Tool",
+        description="jsearch - JavaScript Search Tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:

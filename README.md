@@ -1,17 +1,17 @@
-# jsearch - Bug Bounty Reconnaissance Tool
+# jsearch - JavaScript Search Tool
 
 <div align="center">
 
 ```
-                 __                                         .__     
-                |__|  ______  ____  _____   _______   ____  |  |__  
-                |  | /  ___/_/ __ \ \__  \  \_  __ \_/ ___\ |  |  \ 
-                |  | \___ \ \  ___/  / __ \_ |  | \/\  \___ |   Y  \ 
-            /\__|  |/____  > \___  >(____  / |__|    \___  >|___|  /
-            \______|     \/      \/      \/              \/      \/ 
+     __                                         .__     
+    |__|  ______  ____  _____   _______   ____  |  |__  
+    |  | /  ___/_/ __ \ \__  \  \_  __ \_/ ___\ |  |  \ 
+    |  | \___ \ \  ___/  / __ \_ |  | \/\  \___ |   Y  \ 
+/\__|  |/____  > \___  >(____  / |__|    \___  >|___|  /
+\______|     \/      \/      \/              \/      \/ 
 ```
 
-**A comprehensive subdomain discovery and JavaScript analysis tool for bug bounty hunters**
+**A comprehensive subdomain discovery and JavaScript analysis tool**
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -20,7 +20,7 @@
 
 ## 🔍 Overview
 
-JSearch is an automated reconnaissance tool designed for bug bounty hunters and penetration testers. It combines multiple powerful tools to perform comprehensive subdomain discovery, live domain verification, JavaScript file extraction, and secret analysis in a streamlined workflow.
+jsearch is an automated reconnaissance tool designed for bug bounty hunters and penetration testers. It combines multiple powerful tools to perform comprehensive subdomain discovery, live domain verification, JavaScript file extraction, and secret analysis in a streamlined workflow.
 
 ## ✨ Features
 
@@ -30,7 +30,6 @@ JSearch is an automated reconnaissance tool designed for bug bounty hunters and 
 - **Secret Analysis**: Analyzes JavaScript files for potential secrets using mantra
 - **Vulnerability Scanning**: Optional nuclei integration for vulnerability detection
 - **Duplicate Prevention**: Automatically removes duplicates across different tools
-- **Blue-themed Output**: Clean, colored terminal output for better readability
 - **Comprehensive Reporting**: JSON output with detailed results
 
 ## 📦 Installation
@@ -381,9 +380,3 @@ If you have any questions or need help, please:
 1. Check the [Issues](https://github.com/karlvidar/jsearch/issues) page
 2. Create a new issue if your problem isn't already reported
 3. Provide detailed information about your environment and the issue
-
----
-
-<div align="center">
-Made with ❤️ for the bug bounty community
-</div>
