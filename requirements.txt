@@ -1,0 +1,5 @@
+python-3.6
+requests>=2.25.0
+argparse
+pathlib
+colorama>=0.4.4
