@@ -12,12 +12,6 @@ class Config:
     
     # Tool timeouts (in seconds)
     DEFAULT_TIMEOUT = 300
-    HTTPX_TIMEOUT = 10
-    FFUF_TIMEOUT = 10
-    
-    # Thread/concurrency settings
-    HTTPX_THREADS = 50
-    FFUF_THREADS = 50
     
     # Wordlist paths (customize for your system)
     WORDLIST_PATHS = [
@@ -33,47 +27,37 @@ class Config:
     # Tool-specific settings
     SUBFINDER_CONFIG = {
         "sources": ["all"],
-        "timeout": 30,
         "silent": True
     }
     
     FFUF_CONFIG = {
-        "threads": 50,
-        "timeout": 10,
         "follow_redirects": True,
         "auto_calibration": True,
         "silent": True
     }
     
     HTTPX_CONFIG = {
-        "threads": 50,
-        "timeout": 10,
         "follow_redirects": True,
         "status_code": True,
         "silent": True
     }
     
     GAU_CONFIG = {
-        "providers": ["wayback", "commoncrawl", "otx", "urlscan"],
-        "threads": 5,
-        "timeout": 30
+        "providers": ["wayback", "commoncrawl", "otx", "urlscan"]
     }
     
     KATANA_CONFIG = {
         "depth": 3,
         "js_crawl": True,
-        "timeout": 30,
         "silent": True
     }
     
     MANTRA_CONFIG = {
-        "patterns": ["all"],
-        "timeout": 60
+        "patterns": ["all"]
     }
     
     NUCLEI_CONFIG = {
         "severity": ["medium", "high", "critical"],
-        "timeout": 30,
         "rate_limit": 150,
         "silent": True
     }

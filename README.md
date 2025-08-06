@@ -344,9 +344,60 @@ echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-**5. Timeout issues**
+### WSL Stability Issues
+
+**If you're experiencing WSL crashes during long scans:**
+
+**Quick Fixes:**
+```bash
+# 1. Reduce thread count for stability (edit jsearch.py)
+# Change: self.threads = 10  # instead of default 50
+
+# 2. Skip problematic tools if needed
+jsearch -u example.com  # Run basic scan first
+
+# 3. Restart WSL when it crashes
+wsl --shutdown  # In Windows PowerShell
+wsl             # Restart
+
+# 4. Run jsearch again - it resumes from saved progress
+jsearch -u example.com  # Will use existing results
+```
+
+**For Persistent WSL Issues:**
+```bash
+# Consider running on native Linux or reduce scan intensity
+# You can also run tools individually:
+subfinder -d example.com -o subdomains.txt
+httpx -l subdomains.txt -o live.txt
+gau example.com | grep '\.js$' > js_files.txt
+```
+
+**6. Timeout issues**
 - Increase timeout values in the script for slow networks
 - Reduce thread counts for stability
+
+**6. WSL crashes during long scans**
+```bash
+# If WSL crashes during jsearch execution:
+# 1. Restart WSL
+wsl --shutdown
+wsl
+
+# 2. Run jsearch again - it will resume from saved results
+jsearch -u example.com
+
+# 3. For very unstable WSL, run tools individually:
+# First get subdomains only
+jsearch -u example.com  # Stop after subfinder completes
+
+# Then check what was already found
+ls jsearch_example_com/
+cat jsearch_example_com/subfinder_results.txt
+
+# 4. Alternative: Use smaller thread counts
+# Edit jsearch.py and change: self.threads = 10  # instead of 50
+```
 
 ## 🤝 Contributing
 

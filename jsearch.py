@@ -38,7 +38,7 @@ class JSearch:
         # Configuration options
         self.custom_wordlist = None
         self.timeout = 300
-        self.threads = 50
+        self.threads = 1  # Single-threaded for stability
         self.quiet_mode = False
         self.verbose_mode = False
         
