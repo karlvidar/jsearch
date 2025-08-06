@@ -61,12 +61,12 @@ class JSearch:
         """Print the tool banner"""
         banner = f"""
 {Colors.BOLD}{Colors.BLUE}
-                 __                                         .__     
-                |__|  ______  ____  _____   _______   ____  |  |__  
+                 __                                         .__
+                |__|  ______  ____  _____   _______   ____  |  |__
                 |  | /  ___/_/ __ \ \__  \  \_  __ \_/ ___\ |  |  \ 
                 |  | \___ \ \  ___/  / __ \_ |  | \/\  \___ |   Y  \ 
             /\__|  |/____  > \___  >(____  / |__|    \___  >|___|  /
-            \______|     \/      \/      \/              \/      \/ 
+            \______|     \/      \/      \/              \/      \/
 {Colors.END}
 {Colors.LIGHT_BLUE}                          JavaScript Search Tool{Colors.END}
 {Colors.DARK_BLUE}                          Target: {self.target_url}{Colors.END}
@@ -194,7 +194,7 @@ class JSearch:
                     subdomain = line.strip()
                     if subdomain and subdomain not in self.subdomains:
                         self.subdomains.add(subdomain)
-                        # Don't print here since we already saw it in live output
+                        print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {subdomain}")
             
             self.log(f"Found {len(self.subdomains)} subdomains with subfinder", "SUCCESS")
         else:
