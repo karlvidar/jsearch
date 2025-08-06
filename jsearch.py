@@ -239,7 +239,7 @@ class JSearch:
             return
         
         output_file = os.path.join(self.output_path, "ffuf_results.json")
-        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -of json -t {self.threads} -timeout {self.timeout}"
+        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -of json -t {self.threads}"
         
         self.run_command_live(command, "ffuf subdomain fuzzing")
         
