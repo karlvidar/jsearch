@@ -225,7 +225,7 @@ class JSearch:
                         subdomain = result.get('url', '').replace('https://', '').replace('http://', '').strip('/')
                         if subdomain and subdomain not in self.subdomains:
                             self.subdomains.add(subdomain)
-                            print(f"{Colors.DARK_BLUE}[SUBDOMAIN] {subdomain}{Colors.END}")
+                            print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {subdomain}")
                     
                     new_count = len(self.subdomains) - initial_count
                     self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
@@ -261,7 +261,7 @@ class JSearch:
                     domain = line.strip()
                     if domain:
                         live_domains_list.append(domain)
-                        print(f"{Colors.GREEN}[LIVE] {domain}{Colors.END}")
+                        print(f"{Colors.GREEN}[LIVE]{Colors.END} {domain}")
             
             # Convert to set for deduplication but keep the list for order
             self.live_domains = set(live_domains_list)
@@ -315,7 +315,7 @@ class JSearch:
                             self.js_files.add(url)
                             js_files_for_domain += 1
                             total_js_files_found += 1
-                            print(f"{Colors.YELLOW}[JS FILE] {url}{Colors.END}")
+                            print(f"{Colors.YELLOW}[JS FILE]{Colors.END} {url}")
                 
                 # Check for any stderr (warnings) - ignore gau config warnings
                 stderr = process.stderr.read()
@@ -422,23 +422,19 @@ class JSearch:
                     # Show live output from mantra with proper banner filtering
                     if result.stdout:
                         lines = result.stdout.strip().split('\n')
-                        banner_keywords = ['███', '██', 'MANTRA', '[Coded by', '╚═╝', '╔═╗', 'Version', 'Send URLs via stdin']
-                        results_started = False
+                        banner_keywords = ['███', '██', 'MANTRA', '[Coded by', '╚═╝', '╔═╗', 'Version', 'Send URLs via stdin', 'Brosck']
                         
                         for line in lines:
                             line_clean = line.strip()
                             if not line_clean:
                                 continue
                                 
-                            # Skip banner lines
+                            # Skip banner lines - check if ANY banner keyword is in the line
                             is_banner = any(keyword in line for keyword in banner_keywords)
-                            if is_banner:
-                                continue
                             
-                            # Show actual results
-                            if line_clean and not is_banner:
-                                print(f"{Colors.YELLOW}[MANTRA] {line_clean}{Colors.END}")
-                                results_started = True
+                            # Only show lines that start with [+] or [-] (actual mantra results)
+                            if line_clean and not is_banner and (line_clean.startswith('[+]') or line_clean.startswith('[-]')):
+                                print(f"{Colors.YELLOW}[MANTRA]{Colors.END} {line_clean}")
                     
                     break
                 else:
@@ -465,20 +461,21 @@ class JSearch:
                 if content.strip():
                     # Filter out banner lines from the saved output
                     lines = content.strip().split('\n')
-                    banner_keywords = ['███', '██', 'MANTRA', '[Coded by', '╚═╝', '╔═╗', 'Version', 'Send URLs via stdin']
+                    banner_keywords = ['███', '██', 'MANTRA', '[Coded by', '╚═╝', '╔═╗', 'Version', 'Send URLs via stdin', 'Brosck']
                     actual_secrets = []
                     
                     for line in lines:
                         line_clean = line.strip()
-                        if line_clean and not any(keyword in line for keyword in banner_keywords):
+                        # Only include lines that start with [+] or [-] (actual mantra results)
+                        if line_clean and not any(keyword in line for keyword in banner_keywords) and (line_clean.startswith('[+]') or line_clean.startswith('[-]')):
                             actual_secrets.append(line_clean)
                     
                     if actual_secrets:
                         # Show a preview of actual secrets found
                         for line in actual_secrets[:5]:  # Show first 5 real secrets
-                            print(f"{Colors.RED}[SECRET] {line[:80]}...{Colors.END}")
+                            print(f"{Colors.RED}[SECRET]{Colors.END} {line[:80]}...")
                         if len(actual_secrets) > 5:
-                            print(f"{Colors.RED}[SECRET] ... and {len(actual_secrets) - 5} more secrets found{Colors.END}")
+                            print(f"{Colors.RED}[SECRET]{Colors.END} ... and {len(actual_secrets) - 5} more secrets found")
                         self.log(f"Found {len(actual_secrets)} potential secrets! Check mantra_secrets.txt", "SUCCESS")
                     else:
                         self.log("No secrets found (only banner content detected)", "INFO")
@@ -528,9 +525,9 @@ class JSearch:
                     lines = content.strip().split('\n')
                     for line in lines[:3]:  # Show first 3 vulnerabilities
                         if line.strip():
-                            print(f"{Colors.RED}[VULN] {line.strip()[:100]}...{Colors.END}")
+                            print(f"{Colors.RED}[VULN]{Colors.END} {line.strip()[:100]}...")
                     if len(lines) > 3:
-                        print(f"{Colors.RED}[VULN] ... and {len(lines) - 3} more vulnerabilities found{Colors.END}")
+                        print(f"{Colors.RED}[VULN]{Colors.END} ... and {len(lines) - 3} more vulnerabilities found")
                     self.log(f"Found {len(lines)} potential vulnerabilities with nuclei", "SUCCESS")
                 else:
                     self.log("No vulnerabilities found with nuclei", "INFO")
