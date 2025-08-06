@@ -38,7 +38,7 @@ class JSearch:
         # Configuration options
         self.custom_wordlist = None
         self.timeout = 300
-        self.threads = 1  # Single-threaded for stability
+        self.threads = 50
         self.quiet_mode = False
         self.verbose_mode = False
         
@@ -196,7 +196,7 @@ class JSearch:
         self.log("Starting subdomain fuzzing with ffuf...")
         
         # Use custom wordlist if provided, otherwise use default paths
-        wordlist_path = self.custom_wordlist or "/usr/share/wordlists/seclists/Discovery/DNS/bug-bounty-program-subdomains-trickest-inventory.txt"
+        wordlist_path = self.custom_wordlist or "/usr/share/wordlists/seclists/Discovery/DNS/deepmagic.com-prefixes-top500.txt"
         
         # Check if wordlist exists
         if not os.path.exists(wordlist_path):
