@@ -404,6 +404,8 @@ class JSearch:
         
         # Try different command formats for mantra
         commands_to_try = [
+            f"cat {temp_file} | mantra -o {output_file}",
+            f"cat {temp_file} | mantra > {output_file}",
             f"mantra {temp_file} -o {output_file}",
             f"mantra -f {temp_file} -o {output_file}",
             f"mantra -i {temp_file} -o {output_file}",
@@ -563,29 +565,29 @@ class JSearch:
         try:
             
             # Step 1: Discover subdomains
-            print(f"{Colors.BOLD}{Colors.BLUE}[1/5] Gathering Subdomains{Colors.END}")
+            print(f"{Colors.BOLD}{Colors.LIGHT_BLUE}[1/5] Gathering Subdomains{Colors.END}")
             self.discover_subdomains_subfinder()
             self.discover_subdomains_ffuf()
             
             # Step 2: Check live domains
-            print(f"\n{Colors.BOLD}{Colors.BLUE}[2/5] Checking Live Domains{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.LIGHT_BLUE}[2/5] Checking Live Domains{Colors.END}")
             self.check_live_domains()
             
             # Step 3: Discover JS files
-            print(f"\n{Colors.BOLD}{Colors.BLUE}[3/5] Discovering JS Files{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.LIGHT_BLUE}[3/5] Discovering JS Files{Colors.END}")
             self.discover_js_files_gau()
             self.discover_js_files_katana()
             
             # Step 4: Analyze for secrets
-            print(f"\n{Colors.BOLD}{Colors.BLUE}[4/5] Analyzing for Secrets{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.LIGHT_BLUE}[4/5] Analyzing for Secrets{Colors.END}")
             self.analyze_secrets_mantra()
             
             # Step 5: Optional nuclei scan
-            print(f"\n{Colors.BOLD}{Colors.BLUE}[5/5] Scanning for Vulnerabilities{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.LIGHT_BLUE}[5/5] Scanning for Vulnerabilities{Colors.END}")
             self.analyze_with_nuclei()
             
             # Step 6: Save results
-            print(f"\n{Colors.BOLD}{Colors.BLUE}Finalizing Results{Colors.END}")
+            print(f"\n{Colors.BOLD}{Colors.LIGHT_BLUE}Finalizing Results{Colors.END}")
             self.save_final_output()
             self.print_summary()
             
