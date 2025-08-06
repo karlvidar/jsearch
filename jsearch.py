@@ -402,14 +402,12 @@ class JSearch:
             for js_file in self.js_files:
                 f.write(f"{js_file}\n")
         
-        # Try different command formats for mantra
+        # Try different command formats for mantra (based on actual mantra usage)
         commands_to_try = [
-            f"cat {temp_file} | mantra -o {output_file}",
             f"cat {temp_file} | mantra > {output_file}",
-            f"mantra {temp_file} -o {output_file}",
-            f"mantra -f {temp_file} -o {output_file}",
-            f"mantra -i {temp_file} -o {output_file}",
-            f"mantra -l {temp_file} -o {output_file}"
+            f"cat {temp_file} | mantra -s > {output_file}",
+            f"cat {temp_file} | mantra -d > {output_file}",
+            f"type {temp_file} | mantra > {output_file}"  # Windows alternative
         ]
         
         success = False
