@@ -1,11 +1,14 @@
-# JSearch - Bug Bounty Reconnaissance Tool
+# jsearch - Bug Bounty Reconnaissance Tool
 
 <div align="center">
 
 ```
-     ╦╔═╗╔═╗╔═╗╦═╗╔═╗╦ ╦
-     ║╚═╗║╣ ╠═╣╠╦╝║  ╠═╣
-    ╚╝╚═╝╚═╝╩ ╩╩╚═╚═╝╩ ╩
+                 __                                         .__     
+                |__|  ______  ____  _____   _______   ____  |  |__  
+                |  | /  ___/_/ __ \ \__  \  \_  __ \_/ ___\ |  |  \ 
+                |  | \___ \ \  ___/  / __ \_ |  | \/\  \___ |   Y  \ 
+            /\__|  |/____  > \___  >(____  / |__|    \___  >|___|  /
+            \______|     \/      \/      \/              \/      \/ 
 ```
 
 **A comprehensive subdomain discovery and JavaScript analysis tool for bug bounty hunters**
