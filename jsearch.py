@@ -59,13 +59,21 @@ class JSearch:
         """Print the tool banner"""
         banner = f"""
 {Colors.BOLD}{Colors.BLUE}
-     ╦╔═╗╔═╗╔═╗╦═╗╔═╗╦ ╦
-     ║╚═╗║╣ ╠═╣╠╦╝║  ╠═╣
-    ╚╝╚═╝╚═╝╩ ╩╩╚═╚═╝╩ ╩
+            ███                                                █████     
+            ░░░                                                ░░███      
+            █████  █████   ██████   ██████   ████████   ██████  ░███████  
+           ░░███  ███░░   ███░░███ ░░░░░███ ░░███░░███ ███░░███ ░███░░███ 
+            ░███ ░░█████ ░███████   ███████  ░███ ░░░ ░███ ░░░  ░███ ░███ 
+            ░███  ░░░░███░███░░░   ███░░███  ░███     ░███  ███ ░███ ░███ 
+            ░███  ██████ ░░██████ ░░████████ █████    ░░██████  ████ █████
+            ░███ ░░░░░░   ░░░░░░   ░░░░░░░░ ░░░░░      ░░░░░░  ░░░░ ░░░░░ 
+        ███ ░███                                                          
+        ░░██████                                                           
+        ░░░░░░
 {Colors.END}
-{Colors.LIGHT_BLUE}    Bug Bounty Reconnaissance Tool{Colors.END}
-{Colors.DARK_BLUE}    Target: {self.target_url}{Colors.END}
-{Colors.DARK_BLUE}    Output: {self.output_path}{Colors.END}
+{Colors.LIGHT_BLUE}                          JavaScript Search Tool{Colors.END}
+{Colors.DARK_BLUE}                          Target: {self.target_url}{Colors.END}
+{Colors.DARK_BLUE}                          Output: {self.output_path}{Colors.END}
         """
         print(banner)
     
@@ -88,10 +96,14 @@ class JSearch:
         """Run a shell command and return output"""
         self.log(f"Running: {description}")
         try:
-            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=300)
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=None)
             if result.returncode != 0:
-                self.log(f"Error running {description}: {result.stderr}", "ERROR")
-                return ""
+                # Only treat as error if it's actually an error, not just warnings
+                if result.stderr and not ("warning" in result.stderr.lower() and "config" in result.stderr.lower()):
+                    self.log(f"Error running {description}: {result.stderr}", "ERROR")
+                    return ""
+                elif result.stderr and "warning" in result.stderr.lower():
+                    self.log(f"Warning from {description}: {result.stderr.strip()}", "WARNING")
             return result.stdout
         except subprocess.TimeoutExpired:
             self.log(f"Timeout running {description}", "WARNING")
@@ -313,8 +325,30 @@ class JSearch:
             for js_file in self.js_files:
                 f.write(f"{js_file}\n")
         
-        command = f"mantra -f {temp_file} -o {output_file}"
-        self.run_command(command, "mantra secret analysis")
+        # Try different command formats for mantra
+        commands_to_try = [
+            f"mantra {temp_file} -o {output_file}",
+            f"mantra -f {temp_file} -o {output_file}",
+            f"mantra -i {temp_file} -o {output_file}",
+            f"mantra -l {temp_file} -o {output_file}"
+        ]
+        
+        success = False
+        for command in commands_to_try:
+            result = self.run_command(command, "mantra secret analysis")
+            if result is not None and os.path.exists(output_file):
+                success = True
+                break
+            elif os.path.exists(output_file):
+                success = True
+                break
+        
+        if not success:
+            self.log("Could not execute mantra with any known command format", "ERROR")
+            # Clean up temp file
+            if os.path.exists(temp_file):
+                os.remove(temp_file)
+            return
         
         if os.path.exists(output_file):
             with open(output_file, 'r') as f:
