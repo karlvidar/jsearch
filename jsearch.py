@@ -424,8 +424,8 @@ class JSearch:
             try:
                 self.log(f"Trying command: {command}")
                 
-                # Use run_command_live to show real-time output (filtered for mantra)
-                output = self.run_command_live(command, "mantra secret analysis", filter_mantra_banner=True)
+                # Use run_command_live to show real-time output (no filtering for debugging)
+                output = self.run_command_live(command, "mantra secret analysis", filter_mantra_banner=False)
                 
                 if os.path.exists(output_file):
                     success = True
