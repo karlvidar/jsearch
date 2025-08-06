@@ -7,7 +7,10 @@
 **A comprehensive subdomain discovery and JavaScript analysis tool**
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License**3. Permission denied**
+```bash
+chmod +x jsearch.py
+```T](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 </div>
 
@@ -34,12 +37,11 @@ git clone https://github.com/karlvidar/jsearch.git
 cd jsearch
 
 # 2. Make executable
-chmod +x jsearch.py cli.py
+chmod +x jsearch.py
 
-# 3. Create global aliases
+# 3. Create global alias
 cd ..
 echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bashrc
-echo "alias jsearch-cli='python3 $(pwd)/jsearch/cli.py'" >> ~/.bashrc
 source ~/.bashrc
 
 # 4. Test the installation
@@ -53,17 +55,15 @@ git clone https://github.com/karlvidar/jsearch.git
 cd jsearch
 
 # 2. Make executable
-chmod +x jsearch.py cli.py
+chmod +x jsearch.py
 
-# 3. Create global aliases (for bash)
+# 3. Create global alias (for bash)
 cd ..
 echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bash_profile
-echo "alias jsearch-cli='python3 $(pwd)/jsearch/cli.py'" >> ~/.bash_profile
 source ~/.bash_profile
 
 # For zsh users (default on newer macOS)
 echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.zshrc
-echo "alias jsearch-cli='python3 $(pwd)/jsearch/cli.py'" >> ~/.zshrc
 source ~/.zshrc
 
 # 4. Test the installation
@@ -76,9 +76,8 @@ jsearch --help
 git clone https://github.com/karlvidar/jsearch.git
 cd jsearch
 
-# 2. Use the provided batch files
-# Copy jsearch.bat and jsearch-cli.bat to a directory in your PATH
-# Or run directly: python jsearch.py -u example.com
+# 2. Run directly
+python jsearch.py -u example.com
 ```
 
 ## 🛠️ Install Required Tools
@@ -150,19 +149,12 @@ python3 jsearch.py -u example.com
 
 ### Advanced Usage
 
-**With alias:**
 ```bash
-# Enhanced CLI with more options
-jsearch-cli -u example.com --check-tools
-
 # Specify custom output directory
 jsearch -u example.com -p /tmp/bug_bounty_results
 
 # Save results to specific file
 jsearch -u example.com -o results.json
-
-# Skip optional tools
-jsearch-cli -u example.com --skip-katana --skip-nuclei
 ```
 
 **From project directory:**
@@ -172,9 +164,6 @@ python3 jsearch.py -u example.com -p /tmp/bug_bounty_results
 
 # Save results to specific file
 python3 jsearch.py -u example.com -o results.json
-
-# Enhanced CLI
-python3 cli.py -u example.com --check-tools
 ```
 
 ### Command Line Options
