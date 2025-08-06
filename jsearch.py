@@ -104,10 +104,18 @@ class JSearch:
         """Run a shell command and show live output"""
         self.log(f"Running: {description}")
         try:
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
-            
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
+
             output_lines = []
-            
+
             # Read output line by line as it comes
             while True:
                 output = process.stdout.readline()
@@ -115,34 +123,32 @@ class JSearch:
                     break
                 if output:
                     line = output.strip()
-                    # Filter mantra banner if requested
                     if filter_mantra_banner and "mantra secret analysis" in description.lower():
-                        # Only show lines that start with [+] or [-], skip banner lines
-                        if line and (line.startswith('[+]') or line.startswith('[-]')):
+                        # Only print [+/−] lines, skip banner or anything else
+                        if line.startswith('[+]') or line.startswith('[-]'):
                             print(line)
-                    # Add [SUBDOMAIN] prefix for subfinder output
                     elif "subfinder subdomain discovery" in description.lower():
-                        if line and line.strip():
+                        if line.strip():
                             print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {line}")
                     else:
-                        print(line)  # Show live output
+                        print(line)  # Show everything else
                     output_lines.append(output)
-            
+
             # Wait for process to complete and get any remaining output
             stdout, stderr = process.communicate()
             if stdout:
                 output_lines.append(stdout)
-            
+
             if process.returncode != 0 and stderr:
-                # Only treat as error if it's actually an error, not just warnings
+                # Only treat as error if it's not just a config warning
                 if not ("warning" in stderr.lower() and "config" in stderr.lower()):
                     self.log(f"Error running {description}: {stderr}", "ERROR")
                     return ""
                 elif "warning" in stderr.lower():
                     self.log(f"Warning from {description}: {stderr.strip()}", "WARNING")
-            
+
             return ''.join(output_lines)
-            
+
         except Exception as e:
             self.log(f"Exception running {description}: {str(e)}", "ERROR")
             return ""
