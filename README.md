@@ -7,10 +7,7 @@
 **A comprehensive subdomain discovery and JavaScript analysis tool**
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
-[![License**3. Permission denied**
-```bash
-chmod +x jsearch.py
-```T](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 </div>
 
@@ -291,7 +288,7 @@ source ~/.bashrc
 
 **2. Permission denied**
 ```bash
-chmod +x jsearch.py cli.py
+chmod +x jsearch.py
 ```
 
 **3. Wordlist not found**
