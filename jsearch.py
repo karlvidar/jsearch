@@ -166,11 +166,16 @@ class JSearch:
             return False
         
         self.log("All required tools are available", "SUCCESS")
+        print()
         return True
     
     def discover_subdomains_subfinder(self):
         """Discover subdomains using subfinder"""
         self.log("Starting subdomain discovery with subfinder...")
+        
+        # Add the target URL itself as the first subdomain
+        self.subdomains.add(self.target_url)
+        print(f"{Colors.DARK_BLUE}{self.target_url}{Colors.END}")
         
         output_file = os.path.join(self.output_path, "subfinder_results.txt")
         command = f"subfinder -d {self.target_url} -o {output_file}"
@@ -181,7 +186,7 @@ class JSearch:
             with open(output_file, 'r') as f:
                 for line in f:
                     subdomain = line.strip()
-                    if subdomain:
+                    if subdomain and subdomain not in self.subdomains:
                         self.subdomains.add(subdomain)
                         print(f"{Colors.DARK_BLUE}{subdomain}{Colors.END}")
             
@@ -408,7 +413,7 @@ class JSearch:
         
         success = False
         for command in commands_to_try:
-            result = self.run_command(command, "mantra secret analysis")
+            result = self.run_command_live(command, "mantra secret analysis")
             if result is not None and os.path.exists(output_file):
                 success = True
                 break
