@@ -500,7 +500,7 @@ class JSearch:
         output_file = os.path.join(self.output_path, "nuclei_results.txt")
         command = f"nuclei -list {temp_file} -o {output_file} -severity medium,high,critical"
         
-        self.run_command(command, "nuclei vulnerability scanning")
+        self.run_command_live(command, "nuclei vulnerability scanning")
         
         if os.path.exists(output_file):
             with open(output_file, 'r') as f:
