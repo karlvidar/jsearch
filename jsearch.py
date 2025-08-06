@@ -419,13 +419,26 @@ class JSearch:
                 if result.returncode == 0 and os.path.exists(output_file):
                     success = True
                     
-                    # Show some output from mantra (without banner filtering for now)
+                    # Show live output from mantra with proper banner filtering
                     if result.stdout:
                         lines = result.stdout.strip().split('\n')
-                        # Skip obvious banner lines but don't get stuck
-                        for line in lines[-10:]:  # Show last 10 lines which are likely results
-                            if line.strip() and not any(x in line for x in ['███', '██', 'MANTRA', '[Coded by']):
-                                print(f"{Colors.YELLOW}[MANTRA] {line.strip()}{Colors.END}")
+                        banner_keywords = ['███', '██', 'MANTRA', '[Coded by', '╚═╝', '╔═╗', 'Version', 'Send URLs via stdin']
+                        results_started = False
+                        
+                        for line in lines:
+                            line_clean = line.strip()
+                            if not line_clean:
+                                continue
+                                
+                            # Skip banner lines
+                            is_banner = any(keyword in line for keyword in banner_keywords)
+                            if is_banner:
+                                continue
+                            
+                            # Show actual results
+                            if line_clean and not is_banner:
+                                print(f"{Colors.YELLOW}[MANTRA] {line_clean}{Colors.END}")
+                                results_started = True
                     
                     break
                 else:
@@ -450,14 +463,25 @@ class JSearch:
             with open(output_file, 'r') as f:
                 content = f.read()
                 if content.strip():
-                    # Show a preview of secrets found
+                    # Filter out banner lines from the saved output
                     lines = content.strip().split('\n')
-                    for line in lines[:5]:  # Show first 5 secrets
-                        if line.strip():
-                            print(f"{Colors.RED}[SECRET] {line.strip()[:80]}...{Colors.END}")
-                    if len(lines) > 5:
-                        print(f"{Colors.RED}[SECRET] ... and {len(lines) - 5} more secrets found{Colors.END}")
-                    self.log("Potential secrets found! Check mantra_secrets.txt", "SUCCESS")
+                    banner_keywords = ['███', '██', 'MANTRA', '[Coded by', '╚═╝', '╔═╗', 'Version', 'Send URLs via stdin']
+                    actual_secrets = []
+                    
+                    for line in lines:
+                        line_clean = line.strip()
+                        if line_clean and not any(keyword in line for keyword in banner_keywords):
+                            actual_secrets.append(line_clean)
+                    
+                    if actual_secrets:
+                        # Show a preview of actual secrets found
+                        for line in actual_secrets[:5]:  # Show first 5 real secrets
+                            print(f"{Colors.RED}[SECRET] {line[:80]}...{Colors.END}")
+                        if len(actual_secrets) > 5:
+                            print(f"{Colors.RED}[SECRET] ... and {len(actual_secrets) - 5} more secrets found{Colors.END}")
+                        self.log(f"Found {len(actual_secrets)} potential secrets! Check mantra_secrets.txt", "SUCCESS")
+                    else:
+                        self.log("No secrets found (only banner content detected)", "INFO")
                 else:
                     self.log("No secrets found", "INFO")
         else:
