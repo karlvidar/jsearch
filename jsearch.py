@@ -104,27 +104,15 @@ class JSearch:
         """Run a shell command and show live output"""
         self.log(f"Running: {description}")
         try:
-            # For ffuf, we need to see stderr output for progress info
-            if "ffuf subdomain fuzzing" in description.lower():
-                process = subprocess.Popen(
-                    command,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,  # Redirect stderr to stdout for ffuf
-                    text=True,
-                    bufsize=0,
-                    universal_newlines=True
-                )
-            else:
-                process = subprocess.Popen(
-                    command,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    bufsize=0,
-                    universal_newlines=True
-                )
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
 
             output_lines = []
 
@@ -136,28 +124,26 @@ class JSearch:
                 if output:
                     line = output.strip()
                     if filter_mantra_banner and "mantra secret analysis" in description.lower():
+                        # Only print [+/−] lines, skip banner or anything else
                         if line.startswith('[+]') or line.startswith('[-]'):
                             print(line)
                     elif "subfinder subdomain discovery" in description.lower():
                         if line.strip():
                             print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {line}")
                     elif "ffuf subdomain fuzzing" in description.lower():
-                        print(line)  # Show all ffuf output including progress
-                    else:
+                        # Show ffuf output as-is without any prefix
                         print(line)
+                    else:
+                        print(line)  # Show everything else
                     output_lines.append(output)
 
             # Wait for process to complete and get any remaining output
             stdout, stderr = process.communicate()
             if stdout:
                 output_lines.append(stdout)
-                # Show any remaining output
-                for line in stdout.strip().split('\n'):
-                    if line.strip():
-                        if "ffuf subdomain fuzzing" in description.lower():
-                            print(line.strip())
 
             if process.returncode != 0 and stderr:
+                # Only treat as error if it's not just a config warning
                 if not ("warning" in stderr.lower() and "config" in stderr.lower()):
                     self.log(f"Error running {description}: {stderr}", "ERROR")
                     return ""
