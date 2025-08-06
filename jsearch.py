@@ -175,7 +175,6 @@ class JSearch:
         
         # Add the target URL itself as the first subdomain
         self.subdomains.add(self.target_url)
-        print(f"{Colors.DARK_BLUE}{self.target_url}{Colors.END}")
         
         output_file = os.path.join(self.output_path, "subfinder_results.txt")
         command = f"subfinder -d {self.target_url} -o {output_file}"
@@ -413,13 +412,64 @@ class JSearch:
         
         success = False
         for command in commands_to_try:
-            result = self.run_command_live(command, "mantra secret analysis")
-            if result is not None and os.path.exists(output_file):
-                success = True
-                break
-            elif os.path.exists(output_file):
-                success = True
-                break
+            try:
+                # Add timeout to prevent hanging
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
+                
+                output_lines = []
+                timeout_count = 0
+                max_timeout = 60  # 60 seconds timeout
+                banner_lines = 0  # Track banner lines to skip
+                
+                # Read output line by line with timeout
+                while True:
+                    try:
+                        output = process.stdout.readline()
+                        if output == '' and process.poll() is not None:
+                            break
+                        if output:
+                            line = output.strip()
+                            # Skip mantra banner lines
+                            if (banner_lines < 10 and 
+                                (line.startswith('███') or line.startswith('██') or 
+                                 '[Coded by' in line or '[Version' in line or 
+                                 'MANTRA' in line or line == '')):
+                                banner_lines += 1
+                                continue
+                            
+                            # Only show actual results, not banner
+                            if line and banner_lines >= 10:
+                                print(line)
+                            
+                            output_lines.append(output)
+                            timeout_count = 0  # Reset timeout if we get output
+                        else:
+                            time.sleep(1)
+                            timeout_count += 1
+                            if timeout_count >= max_timeout:
+                                self.log("Mantra process timeout - terminating", "WARNING")
+                                process.terminate()
+                                break
+                    except KeyboardInterrupt:
+                        process.terminate()
+                        break
+                
+                # Wait for process to complete
+                try:
+                    stdout, stderr = process.communicate(timeout=10)
+                    if stdout:
+                        output_lines.append(stdout)
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    self.log("Mantra process killed due to timeout", "WARNING")
+                
+                if os.path.exists(output_file):
+                    success = True
+                    break
+                    
+            except Exception as e:
+                self.log(f"Error running mantra: {str(e)}", "ERROR")
+                continue
         
         if not success:
             self.log("Could not execute mantra with any known command format", "ERROR")
