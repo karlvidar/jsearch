@@ -63,10 +63,10 @@ class JSearch:
 {Colors.BOLD}{Colors.BLUE}
                  __                                         .__
                 |__|  ______  ____  _____   _______   ____  |  |__
-                |  | /  ___/_/ __ \ \__  \  \_  __ \_/ ___\ |  |  \ 
-                |  | \___ \ \  ___/  / __ \_ |  | \/\  \___ |   Y  \ 
-            /\__|  |/____  > \___  >(____  / |__|    \___  >|___|  /
-            \______|     \/      \/      \/              \/      \/
+                |  | /  ___/_/ __ \\ \\__  \\  \\_  __ \\_/ ___\\ |  |  \\ 
+                |  | \\___ \\ \\  ___/  / __ \\_ |  | \\/\\  \\___ |   Y  \\ 
+            /\\__|  |/____  > \\___  >(____  / |__|    \\___  >|___|  /
+            \\______|     \\/      \\/      \\/              \\/      \\/
 {Colors.END}
 {Colors.LIGHT_BLUE}                          JavaScript Search Tool{Colors.END}
 {Colors.DARK_BLUE}                          Target: {self.target_url}{Colors.END}
@@ -109,6 +109,10 @@ class JSearch:
                         # Only show lines that start with [+] or [-], skip banner lines
                         if line and (line.startswith('[+]') or line.startswith('[-]')):
                             print(line)
+                    # Add [SUBDOMAIN] prefix for subfinder output
+                    elif "subfinder subdomain discovery" in description.lower():
+                        if line and line.strip():
+                            print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {line}")
                     else:
                         print(line)  # Show live output
                     output_lines.append(output)
@@ -194,7 +198,7 @@ class JSearch:
                     subdomain = line.strip()
                     if subdomain and subdomain not in self.subdomains:
                         self.subdomains.add(subdomain)
-                        print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {subdomain}")
+                        # Don't print here since we already saw it in live output
             
             self.log(f"Found {len(self.subdomains)} subdomains with subfinder", "SUCCESS")
         else:
