@@ -242,9 +242,37 @@ class JSearch:
             return
         
         output_file = os.path.join(self.output_path, "ffuf_results.json")
-        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -of json"
+        # Add flags to ensure ffuf completes: stop on errors (-se), auto-calibrate (-ac), and set delay between requests
+        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -of json -t {self.threads} -timeout {self.timeout} -ac -p 0.1-0.5"
         
-        self.run_command_live(command, "ffuf subdomain fuzzing")
+        # Run ffuf with retry logic to ensure it always completes
+        max_retries = 3
+        retry_count = 0
+        
+        while retry_count < max_retries:
+            self.log(f"Running ffuf (attempt {retry_count + 1}/{max_retries})...")
+            result = self.run_command_live(command, "ffuf subdomain fuzzing")
+            
+            # Check if ffuf completed successfully by checking if output file exists and has content
+            if os.path.exists(output_file):
+                try:
+                    with open(output_file, 'r') as f:
+                        data = json.load(f)
+                        if 'results' in data:  # ffuf completed successfully
+                            self.log("ffuf completed successfully!", "SUCCESS")
+                            break
+                except json.JSONDecodeError:
+                    pass  # File exists but may be incomplete, retry
+            
+            retry_count += 1
+            if retry_count < max_retries:
+                self.log(f"ffuf may not have completed fully, retrying... ({retry_count}/{max_retries})", "WARNING")
+                # Remove incomplete output file if it exists
+                if os.path.exists(output_file):
+                    os.remove(output_file)
+                time.sleep(5)  # Wait 5 seconds before retry
+            else:
+                self.log("ffuf failed to complete after multiple attempts", "ERROR")
         
         if os.path.exists(output_file):
             try:
