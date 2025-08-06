@@ -130,6 +130,9 @@ class JSearch:
                     elif "subfinder subdomain discovery" in description.lower():
                         if line.strip():
                             print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {line}")
+                    elif "ffuf subdomain fuzzing" in description.lower():
+                        # Show ffuf output as-is without any prefix
+                        print(line)
                     else:
                         print(line)  # Show everything else
                     output_lines.append(output)
