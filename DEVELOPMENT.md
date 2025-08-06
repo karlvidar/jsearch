@@ -12,6 +12,7 @@ jsearch/
 ├── install.sh              # Tool installation script
 ├── setup-alias.sh          # Alias setup script (Linux/macOS)
 ├── setup-alias.ps1         # Alias setup script (Windows)
+├── verify-alias.sh         # Alias verification script
 ├── jsearch.bat             # Windows batch launcher
 ├── jsearch-cli.bat         # Windows enhanced CLI launcher
 ├── requirements.txt        # Python dependencies

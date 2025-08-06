@@ -62,11 +62,37 @@ read -p "Would you like to reload your shell configuration now? (y/N): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "🔄 Reloading shell configuration..."
-    source "$SHELL_CONFIG"
-    echo "✅ Configuration reloaded!"
-    echo ""
-    echo "🎉 JSearch is now available globally!"
-    echo "Try: jsearch --help"
+    
+    # Try to source the config file
+    if source "$SHELL_CONFIG" 2>/dev/null; then
+        echo "✅ Configuration reloaded!"
+        echo ""
+        echo "🎉 JSearch is now available globally!"
+        echo "Try: jsearch --help"
+        
+        # Test if alias works
+        if command -v jsearch >/dev/null 2>&1; then
+            echo "✅ Alias verification: jsearch command is available"
+        else
+            echo "⚠️  Alias verification failed. You may need to:"
+            echo "   1. Open a new terminal window"
+            echo "   2. Or run: source $SHELL_CONFIG"
+        fi
+    else
+        echo "⚠️  Could not reload configuration automatically."
+        echo "Please run: source $SHELL_CONFIG"
+        echo "Or open a new terminal window."
+    fi
 else
-    echo "💡 Remember to run 'source $SHELL_CONFIG' to activate the aliases."
+    echo "💡 To activate the aliases, either:"
+    echo "   1. Run: source $SHELL_CONFIG"
+    echo "   2. Open a new terminal window"
+    echo ""
+    echo "Then test with: jsearch --help"
 fi
+
+echo ""
+echo "🔧 If aliases still don't work, try:"
+echo "   • Check aliases: grep jsearch $SHELL_CONFIG"
+echo "   • Verify Python path: which python3"
+echo "   • Test direct execution: python3 $JSEARCH_DIR/jsearch.py --help"

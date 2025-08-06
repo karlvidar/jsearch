@@ -30,33 +30,72 @@ JSearch is an automated reconnaissance tool designed for bug bounty hunters and 
 - **Blue-themed Output**: Clean, colored terminal output for better readability
 - **Comprehensive Reporting**: JSON output with detailed results
 
-## 🛠️ Required Tools
-
-Before using JSearch, you need to install the following tools:
-
-### Core Tools (Required)
-- [subfinder](https://github.com/projectdiscovery/subfinder)
-- [ffuf](https://github.com/ffuf/ffuf)
-- [gau](https://github.com/lc/gau)
-- [httpx](https://github.com/projectdiscovery/httpx)
-- [mantra](https://github.com/MrEmpy/mantra)
-
-### Optional Tools
-- [katana](https://github.com/projectdiscovery/katana) - Additional JS file discovery
-- [nuclei](https://github.com/projectdiscovery/nuclei) - Vulnerability scanning
-
 ## 📦 Installation
 
-### 1. Clone the Repository
+### Kali Linux / Ubuntu / Debian
 ```bash
+# 1. Clone the repository
 git clone https://github.com/karlvidar/jsearch.git
 cd jsearch
+
+# 2. Make executable
+chmod +x jsearch.py cli.py
+
+# 3. Create global aliases
+cd ..
+echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bashrc
+echo "alias jsearch-cli='python3 $(pwd)/jsearch/cli.py'" >> ~/.bashrc
+source ~/.bashrc
+
+# 4. Test the installation
+jsearch --help
 ```
 
-### 2. Install Required Tools
-
-#### Using Go (Recommended)
+### macOS
 ```bash
+# 1. Clone the repository
+git clone https://github.com/karlvidar/jsearch.git
+cd jsearch
+
+# 2. Make executable
+chmod +x jsearch.py cli.py
+
+# 3. Create global aliases (for bash)
+cd ..
+echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bash_profile
+echo "alias jsearch-cli='python3 $(pwd)/jsearch/cli.py'" >> ~/.bash_profile
+source ~/.bash_profile
+
+# For zsh users (default on newer macOS)
+echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.zshrc
+echo "alias jsearch-cli='python3 $(pwd)/jsearch/cli.py'" >> ~/.zshrc
+source ~/.zshrc
+
+# 4. Test the installation
+jsearch --help
+```
+
+### Windows
+```powershell
+# 1. Clone the repository
+git clone https://github.com/karlvidar/jsearch.git
+cd jsearch
+
+# 2. Use the provided batch files
+# Copy jsearch.bat and jsearch-cli.bat to a directory in your PATH
+# Or run directly: python jsearch.py -u example.com
+```
+
+## 🛠️ Install Required Tools
+
+After installing jsearch, you need to install the reconnaissance tools:
+
+### Kali Linux / Ubuntu / Debian
+```bash
+# Install Go
+sudo apt update
+sudo apt install golang-go
+
 # Install Go tools
 go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
 go install github.com/ffuf/ffuf@latest
@@ -64,110 +103,32 @@ go install github.com/lc/gau/v2/cmd/gau@latest
 go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
 go install -v github.com/projectdiscovery/katana/cmd/katana@latest
 go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
-```
 
-#### Install mantra
-```bash
+# Install mantra
 pip install mantra-cli
-```
 
-#### Alternative: Using Package Managers
-
-**Ubuntu/Debian:**
-```bash
-sudo apt update
-sudo apt install golang-go
-# Then install Go tools as shown above
-```
-
-**macOS:**
-```bash
-brew install go
-# Then install Go tools as shown above
-```
-
-### 3. Install Wordlists (Required for ffuf)
-```bash
-# Install SecLists
+# Install wordlists
 sudo apt install seclists
-# Or manually:
-git clone https://github.com/danielmiessler/SecLists.git /usr/share/wordlists/seclists
 ```
 
-### 4. Make JSearch Executable
+### macOS
 ```bash
-chmod +x jsearch.py
-```
+# Install Go
+brew install go
 
-### 5. Create Global Alias (Recommended)
+# Install Go tools (same as above)
+go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+go install github.com/ffuf/ffuf@latest
+go install github.com/lc/gau/v2/cmd/gau@latest
+go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+go install -v github.com/projectdiscovery/katana/cmd/katana@latest
+go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
 
-**Quick Setup (Automated):**
-```bash
-# Linux/macOS - automatically adds aliases to your shell config
-./setup-alias.sh
+# Install mantra
+pip install mantra-cli
 
-# Windows PowerShell - automatically adds functions to your profile
-.\setup-alias.ps1
-```
-
-**Manual Setup:**
-
-To use `jsearch` from anywhere in your terminal without navigating to the project directory:
-
-#### Linux/macOS:
-```bash
-# Add alias to your shell configuration file
-echo 'alias jsearch="python3 /full/path/to/jsearch/jsearch.py"' >> ~/.bashrc
-echo 'alias jsearch-cli="python3 /full/path/to/jsearch/cli.py"' >> ~/.bashrc
-
-# For zsh users
-echo 'alias jsearch="python3 /full/path/to/jsearch/jsearch.py"' >> ~/.zshrc
-echo 'alias jsearch-cli="python3 /full/path/to/jsearch/cli.py"' >> ~/.zshrc
-
-# Reload shell configuration
-source ~/.bashrc  # or source ~/.zshrc
-```
-
-#### Windows (PowerShell):
-```powershell
-# Note: You may need to allow script execution first
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-# Add to your PowerShell profile
-if (!(Test-Path -Path $PROFILE)) {
-    New-Item -ItemType File -Path $PROFILE -Force
-}
-Add-Content -Path $PROFILE -Value 'function jsearch { python "C:\full\path\to\jsearch\jsearch.py" $args }'
-Add-Content -Path $PROFILE -Value 'function jsearch-cli { python "C:\full\path\to\jsearch\cli.py" $args }'
-
-# Reload PowerShell profile
-. $PROFILE
-```
-
-#### Windows (Command Prompt):
-```cmd
-# Create batch files in a directory that's in your PATH (e.g., C:\Windows\System32)
-# Or add the jsearch directory to your PATH environment variable
-
-# Using the provided batch files:
-# Copy jsearch.bat and jsearch-cli.bat to a directory in your PATH
-# Or add C:\full\path\to\jsearch to your PATH environment variable
-```
-
-### 6. Alternative: Add to PATH
-```bash
-# Add jsearch directory to your PATH
-export PATH="$PATH:/full/path/to/jsearch"
-
-# Add to your ~/.bashrc or ~/.zshrc for persistence
-echo 'export PATH="$PATH:/full/path/to/jsearch"' >> ~/.bashrc
-```
-
-**After setting up the alias, you can use jsearch from anywhere:**
-```bash
-# From any directory
-jsearch -u example.com
-jsearch-cli -u example.com --check-tools
+# Install wordlists manually
+git clone https://github.com/danielmiessler/SecLists.git /usr/local/share/wordlists/seclists
 ```
 
 ## 🚀 Usage
@@ -297,7 +258,34 @@ You can adjust the following parameters in the script:
 
 ## 🔍 Troubleshooting
 
-### Common Issues
+### Alias Issues
+
+**1. Aliases not working:**
+```bash
+# Check if aliases were added
+grep "jsearch" ~/.bashrc  # For bash users
+grep "jsearch" ~/.zshrc   # For zsh users (macOS)
+
+# Reload configuration
+source ~/.bashrc  # or source ~/.zshrc
+
+# Or start a new terminal session
+```
+
+**2. "Command not found" error:**
+```bash
+# Test direct execution first
+python3 /full/path/to/jsearch/jsearch.py --help
+
+# Check if the path in your alias is correct
+which python3
+
+# Re-add the alias with correct path
+echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bashrc
+source ~/.bashrc
+```
+
+### Tool Issues
 
 **1. Tools not found**
 ```bash
@@ -305,12 +293,13 @@ You can adjust the following parameters in the script:
 which subfinder httpx ffuf gau
 
 # Add Go bin to PATH if needed
-export PATH="$PATH:$HOME/go/bin"
+echo 'export PATH="$PATH:$HOME/go/bin"' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 **2. Permission denied**
 ```bash
-chmod +x jsearch.py
+chmod +x jsearch.py cli.py
 ```
 
 **3. Wordlist not found**
