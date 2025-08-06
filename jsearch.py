@@ -128,7 +128,7 @@ class JSearch:
         self.log("Starting subdomain discovery with subfinder...")
         
         output_file = os.path.join(self.output_path, "subfinder_results.txt")
-        command = f"subfinder -d {self.target_url} -o {output_file} -silent"
+        command = f"subfinder -d {self.target_url} -o {output_file}"
         
         self.run_command(command, "subfinder subdomain discovery")
         
@@ -161,7 +161,7 @@ class JSearch:
             return
         
         output_file = os.path.join(self.output_path, "ffuf_results.json")
-        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -of json -t {self.threads} -timeout {self.timeout} -silent"
+        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -of json -t {self.threads} -timeout {self.timeout}"
         
         self.run_command(command, "ffuf subdomain fuzzing")
         
@@ -198,7 +198,7 @@ class JSearch:
                 f.write(f"{subdomain}\n")
         
         output_file = os.path.join(self.output_path, "live_domains.txt")
-        command = f"httpx -l {temp_file} -o {output_file} -timeout {self.timeout} -threads {self.threads} -silent"
+        command = f"httpx -l {temp_file} -o {output_file} -timeout 10 -threads {self.threads}"
         
         self.run_command(command, "httpx live domain check")
         
@@ -273,7 +273,7 @@ class JSearch:
             for domain in self.live_domains:
                 f.write(f"{domain}\n")
         
-        command = f"katana -list {temp_file} -jc -silent -o {output_file}"
+        command = f"katana -list {temp_file} -jc -o {output_file}"
         self.run_command(command, "katana JS discovery")
         
         if os.path.exists(output_file):
@@ -355,7 +355,7 @@ class JSearch:
                 f.write(f"{domain}\n")
         
         output_file = os.path.join(self.output_path, "nuclei_results.txt")
-        command = f"nuclei -list {temp_file} -o {output_file} -silent -severity medium,high,critical"
+        command = f"nuclei -list {temp_file} -o {output_file} -severity medium,high,critical"
         
         self.run_command(command, "nuclei vulnerability scanning")
         
