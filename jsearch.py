@@ -59,17 +59,12 @@ class JSearch:
         """Print the tool banner"""
         banner = f"""
 {Colors.BOLD}{Colors.BLUE}
-            ███                                                █████     
-            ░░░                                                ░░███      
-            █████  █████   ██████   ██████   ████████   ██████  ░███████  
-           ░░███  ███░░   ███░░███ ░░░░░███ ░░███░░███ ███░░███ ░███░░███ 
-            ░███ ░░█████ ░███████   ███████  ░███ ░░░ ░███ ░░░  ░███ ░███ 
-            ░███  ░░░░███░███░░░   ███░░███  ░███     ░███  ███ ░███ ░███ 
-            ░███  ██████ ░░██████ ░░████████ █████    ░░██████  ████ █████
-            ░███ ░░░░░░   ░░░░░░   ░░░░░░░░ ░░░░░      ░░░░░░  ░░░░ ░░░░░ 
-        ███ ░███                                                          
-        ░░██████                                                           
-        ░░░░░░
+                 __                                         .__     
+                |__|  ______  ____  _____   _______   ____  |  |__  
+                |  | /  ___/_/ __ \ \__  \  \_  __ \_/ ___\ |  |  \ 
+                |  | \___ \ \  ___/  / __ \_ |  | \/\  \___ |   Y  \ 
+            /\__|  |/____  > \___  >(____  / |__|    \___  >|___|  /
+            \______|     \/      \/      \/              \/      \/ 
 {Colors.END}
 {Colors.LIGHT_BLUE}                          JavaScript Search Tool{Colors.END}
 {Colors.DARK_BLUE}                          Target: {self.target_url}{Colors.END}
@@ -150,6 +145,7 @@ class JSearch:
                     subdomain = line.strip()
                     if subdomain:
                         self.subdomains.add(subdomain)
+                        print(f"{Colors.DARK_BLUE}[SUBDOMAIN] {subdomain}{Colors.END}")
             
             self.log(f"Found {len(self.subdomains)} subdomains with subfinder", "SUCCESS")
         else:
@@ -187,6 +183,7 @@ class JSearch:
                         subdomain = result.get('url', '').replace('https://', '').replace('http://', '').strip('/')
                         if subdomain and subdomain not in self.subdomains:
                             self.subdomains.add(subdomain)
+                            print(f"{Colors.DARK_BLUE}[SUBDOMAIN] {subdomain}{Colors.END}")
                     
                     new_count = len(self.subdomains) - initial_count
                     self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
@@ -220,6 +217,7 @@ class JSearch:
                     domain = line.strip()
                     if domain:
                         self.live_domains.add(domain)
+                        print(f"{Colors.GREEN}[LIVE] {domain}{Colors.END}")
             
             self.log(f"Found {len(self.live_domains)} live domains", "SUCCESS")
         else:
@@ -253,7 +251,9 @@ class JSearch:
                 for line in f:
                     js_file = line.strip()
                     if js_file and js_file.endswith('.js'):
-                        self.js_files.add(js_file)
+                        if js_file not in self.js_files:
+                            self.js_files.add(js_file)
+                            print(f"{Colors.YELLOW}[JS FILE] {js_file}{Colors.END}")
             
             self.log(f"Found {len(self.js_files)} JS files with gau", "SUCCESS")
         else:
@@ -295,6 +295,7 @@ class JSearch:
                     js_file = line.strip()
                     if js_file and js_file.endswith('.js') and js_file not in self.js_files:
                         self.js_files.add(js_file)
+                        print(f"{Colors.YELLOW}[JS FILE] {js_file}{Colors.END}")
             
             new_count = len(self.js_files) - initial_count
             self.log(f"Found {new_count} new JS files with katana", "SUCCESS")
@@ -354,6 +355,13 @@ class JSearch:
             with open(output_file, 'r') as f:
                 content = f.read()
                 if content.strip():
+                    # Show a preview of secrets found
+                    lines = content.strip().split('\n')
+                    for line in lines[:5]:  # Show first 5 secrets
+                        if line.strip():
+                            print(f"{Colors.RED}[SECRET] {line.strip()[:80]}...{Colors.END}")
+                    if len(lines) > 5:
+                        print(f"{Colors.RED}[SECRET] ... and {len(lines) - 5} more secrets found{Colors.END}")
                     self.log("Potential secrets found! Check mantra_secrets.txt", "SUCCESS")
                 else:
                     self.log("No secrets found", "INFO")
@@ -397,8 +405,14 @@ class JSearch:
             with open(output_file, 'r') as f:
                 content = f.read()
                 if content.strip():
-                    lines = len(content.strip().split('\n'))
-                    self.log(f"Found {lines} potential vulnerabilities with nuclei", "SUCCESS")
+                    # Show vulnerabilities found
+                    lines = content.strip().split('\n')
+                    for line in lines[:3]:  # Show first 3 vulnerabilities
+                        if line.strip():
+                            print(f"{Colors.RED}[VULN] {line.strip()[:100]}...{Colors.END}")
+                    if len(lines) > 3:
+                        print(f"{Colors.RED}[VULN] ... and {len(lines) - 3} more vulnerabilities found{Colors.END}")
+                    self.log(f"Found {len(lines)} potential vulnerabilities with nuclei", "SUCCESS")
                 else:
                     self.log("No vulnerabilities found with nuclei", "INFO")
         else:
@@ -450,24 +464,39 @@ class JSearch:
             return False
         
         try:
+            # Print progress overview
+            print(f"\n{Colors.BOLD}{Colors.BLUE}=== JSEARCH EXECUTION PLAN ==={Colors.END}")
+            print(f"{Colors.LIGHT_BLUE}1. Subdomain Discovery (subfinder + ffuf){Colors.END}")
+            print(f"{Colors.LIGHT_BLUE}2. Live Domain Check (httpx){Colors.END}")
+            print(f"{Colors.LIGHT_BLUE}3. JS File Discovery (gau + katana){Colors.END}")
+            print(f"{Colors.LIGHT_BLUE}4. Secret Analysis (mantra){Colors.END}")
+            print(f"{Colors.LIGHT_BLUE}5. Vulnerability Scanning (nuclei){Colors.END}")
+            print(f"{Colors.BOLD}{Colors.BLUE}==============================={Colors.END}\n")
+            
             # Step 1: Discover subdomains
+            print(f"{Colors.BOLD}{Colors.BLUE}[1/5] SUBDOMAIN DISCOVERY{Colors.END}")
             self.discover_subdomains_subfinder()
             self.discover_subdomains_ffuf()
             
             # Step 2: Check live domains
+            print(f"\n{Colors.BOLD}{Colors.BLUE}[2/5] LIVE DOMAIN CHECK{Colors.END}")
             self.check_live_domains()
             
             # Step 3: Discover JS files
+            print(f"\n{Colors.BOLD}{Colors.BLUE}[3/5] JS FILE DISCOVERY{Colors.END}")
             self.discover_js_files_gau()
             self.discover_js_files_katana()
             
             # Step 4: Analyze for secrets
+            print(f"\n{Colors.BOLD}{Colors.BLUE}[4/5] SECRET ANALYSIS{Colors.END}")
             self.analyze_secrets_mantra()
             
             # Step 5: Optional nuclei scan
+            print(f"\n{Colors.BOLD}{Colors.BLUE}[5/5] VULNERABILITY SCANNING{Colors.END}")
             self.analyze_with_nuclei()
             
             # Step 6: Save results
+            print(f"\n{Colors.BOLD}{Colors.BLUE}FINALIZING RESULTS{Colors.END}")
             self.save_final_output()
             self.print_summary()
             
