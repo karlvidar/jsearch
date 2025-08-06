@@ -413,37 +413,13 @@ class JSearch:
             try:
                 self.log(f"Trying command: {command}")
                 
-                # Use a simpler approach with timeout
-                result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=30)
+                # Use run_command_live to show real-time output
+                output = self.run_command_live(command, "mantra secret analysis")
                 
-                if result.returncode == 0 and os.path.exists(output_file):
+                if os.path.exists(output_file):
                     success = True
-                    
-                    # Show live output from mantra with proper banner filtering
-                    if result.stdout:
-                        lines = result.stdout.strip().split('\n')
-                        banner_keywords = ['███', '██', 'MANTRA', '[Coded by', '╚═╝', '╔═╗', 'Version', 'Send URLs via stdin', 'Brosck']
-                        
-                        for line in lines:
-                            line_clean = line.strip()
-                            if not line_clean:
-                                continue
-                                
-                            # Skip banner lines - check if ANY banner keyword is in the line
-                            is_banner = any(keyword in line for keyword in banner_keywords)
-                            
-                            # Only show lines that start with [+] or [-] (actual mantra results)
-                            if line_clean and not is_banner and (line_clean.startswith('[+]') or line_clean.startswith('[-]')):
-                                print(f"{Colors.YELLOW}[MANTRA]{Colors.END} {line_clean}")
-                    
                     break
-                else:
-                    if result.stderr:
-                        self.log(f"Mantra stderr: {result.stderr[:200]}", "WARNING")
                     
-            except subprocess.TimeoutExpired:
-                self.log(f"Mantra command timed out after 30 seconds", "WARNING")
-                continue
             except Exception as e:
                 self.log(f"Error running mantra: {str(e)}", "ERROR")
                 continue
@@ -459,26 +435,14 @@ class JSearch:
             with open(output_file, 'r') as f:
                 content = f.read()
                 if content.strip():
-                    # Filter out banner lines from the saved output
+                    # Count actual results by counting lines
                     lines = content.strip().split('\n')
-                    banner_keywords = ['███', '██', 'MANTRA', '[Coded by', '╚═╝', '╔═╗', 'Version', 'Send URLs via stdin', 'Brosck']
-                    actual_secrets = []
+                    non_empty_lines = [line for line in lines if line.strip()]
                     
-                    for line in lines:
-                        line_clean = line.strip()
-                        # Only include lines that start with [+] or [-] (actual mantra results)
-                        if line_clean and not any(keyword in line for keyword in banner_keywords) and (line_clean.startswith('[+]') or line_clean.startswith('[-]')):
-                            actual_secrets.append(line_clean)
-                    
-                    if actual_secrets:
-                        # Show a preview of actual secrets found
-                        for line in actual_secrets[:5]:  # Show first 5 real secrets
-                            print(f"{Colors.RED}[SECRET]{Colors.END} {line[:80]}...")
-                        if len(actual_secrets) > 5:
-                            print(f"{Colors.RED}[SECRET]{Colors.END} ... and {len(actual_secrets) - 5} more secrets found")
-                        self.log(f"Found {len(actual_secrets)} potential secrets! Check mantra_secrets.txt", "SUCCESS")
+                    if non_empty_lines:
+                        self.log(f"Found {len(non_empty_lines)} lines in mantra output! Check mantra_secrets.txt", "SUCCESS")
                     else:
-                        self.log("No secrets found (only banner content detected)", "INFO")
+                        self.log("No secrets found", "INFO")
                 else:
                     self.log("No secrets found", "INFO")
         else:
