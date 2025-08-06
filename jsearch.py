@@ -242,26 +242,35 @@ class JSearch:
             return
         
         output_file = os.path.join(self.output_path, "ffuf_results.json")
-        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -json"
+        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
         
         self.run_command_live(command, "ffuf subdomain fuzzing")
         
         if os.path.exists(output_file):
             try:
                 with open(output_file, 'r') as f:
-                    data = json.load(f)
-                    initial_count = len(self.subdomains)
-                    
-                    for result in data.get('results', []):
-                        subdomain = result.get('url', '').replace('https://', '').replace('http://', '').strip('/')
-                        if subdomain and subdomain not in self.subdomains:
-                            self.subdomains.add(subdomain)
-                            print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {subdomain}")
-                    
-                    new_count = len(self.subdomains) - initial_count
-                    self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
-            except json.JSONDecodeError:
-                self.log("Failed to parse ffuf JSON output", "ERROR")
+                    content = f.read().strip()
+                    if content:
+                        initial_count = len(self.subdomains)
+                        
+                        # Parse each line as a separate JSON object (newline-delimited JSON)
+                        for line in content.split('\n'):
+                            if line.strip():
+                                try:
+                                    result = json.loads(line)
+                                    subdomain = result.get('url', '').replace('https://', '').replace('http://', '').strip('/')
+                                    if subdomain and subdomain not in self.subdomains:
+                                        self.subdomains.add(subdomain)
+                                        print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {subdomain}")
+                                except json.JSONDecodeError:
+                                    continue
+                        
+                        new_count = len(self.subdomains) - initial_count
+                        self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
+                    else:
+                        self.log("No ffuf results in output file", "WARNING")
+            except Exception as e:
+                self.log(f"Failed to parse ffuf output: {str(e)}", "ERROR")
         else:
             self.log("No ffuf results file found", "WARNING")
     
