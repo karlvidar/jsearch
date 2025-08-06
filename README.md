@@ -104,8 +104,12 @@ go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
 go install -v github.com/projectdiscovery/katana/cmd/katana@latest
 go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
 
-# Install mantra
-pip install mantra-cli
+# Install mantra (brosck version)
+git clone https://github.com/brosck/mantra.git
+cd mantra
+pip install -r requirements.txt
+sudo cp mantra /usr/local/bin/
+cd ..
 
 # Install wordlists
 sudo apt install seclists
@@ -124,8 +128,12 @@ go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
 go install -v github.com/projectdiscovery/katana/cmd/katana@latest
 go install -v github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
 
-# Install mantra
-pip install mantra-cli
+# Install mantra (brosck version)
+git clone https://github.com/brosck/mantra.git
+cd mantra
+pip install -r requirements.txt
+sudo cp mantra /usr/local/bin/
+cd ..
 
 # Install wordlists manually
 git clone https://github.com/danielmiessler/SecLists.git /usr/local/share/wordlists/seclists
@@ -310,7 +318,31 @@ sudo apt install seclists
 git clone https://github.com/danielmiessler/SecLists.git /usr/share/wordlists/seclists
 ```
 
-**4. Timeout issues**
+**4. Mantra installation issues**
+```bash
+# If you get permission errors with mantra:
+# Make sure you cloned the correct mantra repository
+git clone https://github.com/brosck/mantra.git
+cd mantra
+
+# Install requirements
+pip install -r requirements.txt
+
+# Make mantra executable and copy to system PATH
+chmod +x mantra
+sudo cp mantra /usr/local/bin/
+
+# Test mantra installation
+mantra -h
+
+# If still having issues, try adding to local bin
+mkdir -p ~/.local/bin
+cp mantra ~/.local/bin/
+echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**5. Timeout issues**
 - Increase timeout values in the script for slow networks
 - Reduce thread counts for stability
 

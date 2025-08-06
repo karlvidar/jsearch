@@ -110,12 +110,14 @@ class JSearch:
         for tool in tools:
             try:
                 subprocess.run([tool, "-h"], capture_output=True, timeout=5)
-            except (subprocess.TimeoutExpired, FileNotFoundError):
+            except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
                 missing_tools.append(tool)
         
         if missing_tools:
             self.log(f"Missing tools: {', '.join(missing_tools)}", "ERROR")
             self.log("Please install missing tools before running jsearch", "ERROR")
+            if "mantra" in missing_tools:
+                self.log("For mantra, install from: https://github.com/brosck/mantra", "INFO")
             return False
         
         self.log("All required tools are available", "SUCCESS")
