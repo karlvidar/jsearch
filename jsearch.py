@@ -33,6 +33,7 @@ class JSearch:
         self.output_file = output_file
         self.subdomains: Set[str] = set()
         self.live_domains: Set[str] = set()
+        self.live_domains_ordered: List[str] = []  # Maintain order for processing
         self.js_files: Set[str] = set()
         
         # Configuration options
@@ -243,21 +244,29 @@ class JSearch:
                 f.write(f"{subdomain}\n")
         
         output_file = os.path.join(self.output_path, "live_domains.txt")
-        command = f"httpx -l {temp_file} -o {output_file} -timeout 10 -threads {self.threads}"
+        command = f"httpx -l {temp_file} -o {output_file}"
         
         self.run_command(command, "httpx live domain check")
         
         if os.path.exists(output_file):
+            # Use a list to preserve order instead of a set
+            live_domains_list = []
             with open(output_file, 'r') as f:
                 for line in f:
                     domain = line.strip()
                     if domain:
-                        self.live_domains.add(domain)
+                        live_domains_list.append(domain)
                         print(f"{Colors.GREEN}[LIVE] {domain}{Colors.END}")
+            
+            # Convert to set for deduplication but keep the list for order
+            self.live_domains = set(live_domains_list)
+            # Store ordered list for gau processing
+            self.live_domains_ordered = live_domains_list
             
             self.log(f"Found {len(self.live_domains)} live domains", "SUCCESS")
         else:
             self.log("No live domains found", "WARNING")
+            self.live_domains_ordered = []
         
         # Clean up temp file
         if os.path.exists(temp_file):
@@ -271,27 +280,53 @@ class JSearch:
             
         self.log("Discovering JS files with gau...")
         
-        if not self.live_domains:
+        if not self.live_domains_ordered:
             self.log("No live domains to scan", "WARNING")
             return
         
-        output_file = os.path.join(self.output_path, "gau_js_files.txt")
+        total_js_files_found = 0
         
-        for domain in self.live_domains:
+        for domain in self.live_domains_ordered:
             clean_domain = domain.replace('https://', '').replace('http://', '').strip('/')
-            command = f"gau {clean_domain} | grep -E '\\.js$' >> {output_file}"
-            self.run_command(command, f"gau JS discovery for {clean_domain}")
-        
-        if os.path.exists(output_file):
-            with open(output_file, 'r') as f:
-                for line in f:
-                    js_file = line.strip()
-                    if js_file and js_file.endswith('.js'):
-                        if js_file not in self.js_files:
-                            self.js_files.add(js_file)
-                            print(f"{Colors.YELLOW}[JS FILE] {js_file}{Colors.END}")
+            self.log(f"Running: gau JS discovery for {clean_domain}")
             
-            self.log(f"Found {len(self.js_files)} JS files with gau", "SUCCESS")
+            # Run gau with live output and filter for JS files
+            command = f"gau {clean_domain}"
+            
+            try:
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
+                
+                js_files_for_domain = 0
+                
+                # Read output line by line as it comes
+                while True:
+                    output = process.stdout.readline()
+                    if output == '' and process.poll() is not None:
+                        break
+                    if output:
+                        url = output.strip()
+                        # Check if it's a JS file
+                        if url.endswith('.js') and url not in self.js_files:
+                            self.js_files.add(url)
+                            js_files_for_domain += 1
+                            total_js_files_found += 1
+                            print(f"{Colors.YELLOW}[JS FILE] {url}{Colors.END}")
+                
+                # Check for any stderr (warnings)
+                stderr = process.stderr.read()
+                if stderr and "warning" in stderr.lower():
+                    self.log(f"Warning from gau JS discovery for {clean_domain}: {stderr.strip()}", "WARNING")
+                
+                if js_files_for_domain > 0:
+                    print(f"{Colors.GREEN}Found {js_files_for_domain} JS files for {clean_domain}{Colors.END}")
+                else:
+                    print(f"{Colors.GRAY}No JS files found for {clean_domain}{Colors.END}")
+                    
+            except Exception as e:
+                self.log(f"Error running gau for {clean_domain}: {str(e)}", "ERROR")
+        
+        if total_js_files_found > 0:
+            self.log(f"Found {total_js_files_found} total JS files with gau", "SUCCESS")
         else:
             self.log("No JS files found with gau", "WARNING")
     
@@ -309,7 +344,7 @@ class JSearch:
         
         self.log("Discovering JS files with katana...")
         
-        if not self.live_domains:
+        if not self.live_domains_ordered:
             self.log("No live domains to scan", "WARNING")
             return
         
@@ -318,7 +353,7 @@ class JSearch:
         # Create temp file with live domains
         temp_file = os.path.join(self.output_path, "temp_live_domains.txt")
         with open(temp_file, 'w') as f:
-            for domain in self.live_domains:
+            for domain in self.live_domains_ordered:
                 f.write(f"{domain}\n")
         
         command = f"katana -list {temp_file} -jc -o {output_file}"
@@ -422,14 +457,14 @@ class JSearch:
         
         self.log("Running nuclei scans...")
         
-        if not self.live_domains:
+        if not self.live_domains_ordered:
             self.log("No live domains to scan", "WARNING")
             return
         
         # Create temp file with live domains
         temp_file = os.path.join(self.output_path, "temp_live_domains_nuclei.txt")
         with open(temp_file, 'w') as f:
-            for domain in self.live_domains:
+            for domain in self.live_domains_ordered:
                 f.write(f"{domain}\n")
         
         output_file = os.path.join(self.output_path, "nuclei_results.txt")
