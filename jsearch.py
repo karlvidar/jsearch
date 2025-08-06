@@ -89,7 +89,7 @@ class JSearch:
         color = color_map.get(level, Colors.LIGHT_BLUE)
         print(f"{color}[{timestamp}] [{level}] {message}{Colors.END}")
     
-    def run_command_live(self, command: str, description: str) -> str:
+    def run_command_live(self, command: str, description: str, filter_mantra_banner: bool = False) -> str:
         """Run a shell command and show live output"""
         self.log(f"Running: {description}")
         try:
@@ -103,7 +103,14 @@ class JSearch:
                 if output == '' and process.poll() is not None:
                     break
                 if output:
-                    print(output.strip())  # Show live output
+                    line = output.strip()
+                    # Filter mantra banner if requested
+                    if filter_mantra_banner and "mantra secret analysis" in description.lower():
+                        # Only show lines that start with [+] or [-], skip banner lines
+                        if line and (line.startswith('[+]') or line.startswith('[-]')):
+                            print(line)
+                    else:
+                        print(line)  # Show live output
                     output_lines.append(output)
             
             # Wait for process to complete and get any remaining output
@@ -413,8 +420,8 @@ class JSearch:
             try:
                 self.log(f"Trying command: {command}")
                 
-                # Use run_command_live to show real-time output
-                output = self.run_command_live(command, "mantra secret analysis")
+                # Use run_command_live to show real-time output (filtered for mantra)
+                output = self.run_command_live(command, "mantra secret analysis", filter_mantra_banner=True)
                 
                 if os.path.exists(output_file):
                     success = True
@@ -435,12 +442,12 @@ class JSearch:
             with open(output_file, 'r') as f:
                 content = f.read()
                 if content.strip():
-                    # Count actual results by counting lines
+                    # Count actual secrets found (lines starting with [+])
                     lines = content.strip().split('\n')
-                    non_empty_lines = [line for line in lines if line.strip()]
+                    secrets_count = len([line for line in lines if line.strip().startswith('[+]')])
                     
-                    if non_empty_lines:
-                        self.log(f"Found {len(non_empty_lines)} lines in mantra output! Check mantra_secrets.txt", "SUCCESS")
+                    if secrets_count > 0:
+                        self.log(f"Found {secrets_count} potential secrets! Check mantra_secrets.txt", "SUCCESS")
                     else:
                         self.log("No secrets found", "INFO")
                 else:
