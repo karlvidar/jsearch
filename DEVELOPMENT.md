@@ -10,15 +10,20 @@ jsearch/
 ├── setup.py                # Setup script
 ├── test_jsearch.py         # Test suite
 ├── install.sh              # Tool installation script
+├── setup-alias.sh          # Alias setup script (Linux/macOS)
+├── setup-alias.ps1         # Alias setup script (Windows)
 ├── jsearch.bat             # Windows batch launcher
+├── jsearch-cli.bat         # Windows enhanced CLI launcher
 ├── requirements.txt        # Python dependencies
 ├── config_example.py       # Example configuration
+├── quickstart.py           # Interactive quick start guide
 ├── wordlists/              # Local wordlists
 │   └── subdomains.txt     # Sample subdomain wordlist
 ├── README.md               # User documentation
 ├── LICENSE                 # MIT license
 ├── .gitignore             # Git ignore rules
-└── DEVELOPMENT.md         # This file
+├── DEVELOPMENT.md         # This file
+└── PROJECT_SUMMARY.md     # Project overview
 ```
 
 ## Core Components

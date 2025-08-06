@@ -99,20 +99,109 @@ git clone https://github.com/danielmiessler/SecLists.git /usr/share/wordlists/se
 chmod +x jsearch.py
 ```
 
-### 5. Optional: Add to PATH
+### 5. Create Global Alias (Recommended)
+
+**Quick Setup (Automated):**
 ```bash
-# Add to your ~/.bashrc or ~/.zshrc
-export PATH="$PATH:/path/to/jsearch"
+# Linux/macOS - automatically adds aliases to your shell config
+./setup-alias.sh
+
+# Windows PowerShell - automatically adds functions to your profile
+.\setup-alias.ps1
+```
+
+**Manual Setup:**
+
+To use `jsearch` from anywhere in your terminal without navigating to the project directory:
+
+#### Linux/macOS:
+```bash
+# Add alias to your shell configuration file
+echo 'alias jsearch="python3 /full/path/to/jsearch/jsearch.py"' >> ~/.bashrc
+echo 'alias jsearch-cli="python3 /full/path/to/jsearch/cli.py"' >> ~/.bashrc
+
+# For zsh users
+echo 'alias jsearch="python3 /full/path/to/jsearch/jsearch.py"' >> ~/.zshrc
+echo 'alias jsearch-cli="python3 /full/path/to/jsearch/cli.py"' >> ~/.zshrc
+
+# Reload shell configuration
+source ~/.bashrc  # or source ~/.zshrc
+```
+
+#### Windows (PowerShell):
+```powershell
+# Note: You may need to allow script execution first
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Add to your PowerShell profile
+if (!(Test-Path -Path $PROFILE)) {
+    New-Item -ItemType File -Path $PROFILE -Force
+}
+Add-Content -Path $PROFILE -Value 'function jsearch { python "C:\full\path\to\jsearch\jsearch.py" $args }'
+Add-Content -Path $PROFILE -Value 'function jsearch-cli { python "C:\full\path\to\jsearch\cli.py" $args }'
+
+# Reload PowerShell profile
+. $PROFILE
+```
+
+#### Windows (Command Prompt):
+```cmd
+# Create batch files in a directory that's in your PATH (e.g., C:\Windows\System32)
+# Or add the jsearch directory to your PATH environment variable
+
+# Using the provided batch files:
+# Copy jsearch.bat and jsearch-cli.bat to a directory in your PATH
+# Or add C:\full\path\to\jsearch to your PATH environment variable
+```
+
+### 6. Alternative: Add to PATH
+```bash
+# Add jsearch directory to your PATH
+export PATH="$PATH:/full/path/to/jsearch"
+
+# Add to your ~/.bashrc or ~/.zshrc for persistence
+echo 'export PATH="$PATH:/full/path/to/jsearch"' >> ~/.bashrc
+```
+
+**After setting up the alias, you can use jsearch from anywhere:**
+```bash
+# From any directory
+jsearch -u example.com
+jsearch-cli -u example.com --check-tools
 ```
 
 ## 🚀 Usage
 
 ### Basic Usage
+
+**If you set up an alias (recommended):**
+```bash
+jsearch -u example.com
+```
+
+**From the project directory:**
 ```bash
 python3 jsearch.py -u example.com
 ```
 
 ### Advanced Usage
+
+**With alias:**
+```bash
+# Enhanced CLI with more options
+jsearch-cli -u example.com --check-tools
+
+# Specify custom output directory
+jsearch -u example.com -p /tmp/bug_bounty_results
+
+# Save results to specific file
+jsearch -u example.com -o results.json
+
+# Skip optional tools
+jsearch-cli -u example.com --skip-katana --skip-nuclei
+```
+
+**From project directory:**
 ```bash
 # Specify custom output directory
 python3 jsearch.py -u example.com -p /tmp/bug_bounty_results
@@ -120,8 +209,8 @@ python3 jsearch.py -u example.com -p /tmp/bug_bounty_results
 # Save results to specific file
 python3 jsearch.py -u example.com -o results.json
 
-# Combine options
-python3 jsearch.py -u example.com -p /custom/path -o final_results.json
+# Enhanced CLI
+python3 cli.py -u example.com --check-tools
 ```
 
 ### Command Line Options
