@@ -424,8 +424,8 @@ class JSearch:
             try:
                 self.log(f"Trying command: {command}")
                 
-                # Use run_command_live to show real-time output (no filtering for debugging)
-                output = self.run_command_live(command, "mantra secret analysis", filter_mantra_banner=False)
+                # Use run_command_live to show real-time output (filtered for clean output)
+                output = self.run_command_live(command, "mantra secret analysis", filter_mantra_banner=True)
                 
                 if os.path.exists(output_file):
                     success = True
@@ -446,14 +446,7 @@ class JSearch:
             with open(output_file, 'r') as f:
                 content = f.read()
                 if content.strip():
-                    # Count actual secrets found (lines starting with [+])
-                    lines = content.strip().split('\n')
-                    secrets_count = len([line for line in lines if line.strip().startswith('[+]')])
-                    
-                    if secrets_count > 0:
-                        self.log(f"Found {secrets_count} potential secrets! Check mantra_secrets.txt", "SUCCESS")
-                    else:
-                        self.log("No secrets found", "INFO")
+                    self.log("Mantra analysis complete! Check mantra_secrets.txt for results", "SUCCESS")
                 else:
                     self.log("No secrets found", "INFO")
         else:
