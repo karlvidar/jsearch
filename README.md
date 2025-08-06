@@ -134,14 +134,8 @@ git clone https://github.com/danielmiessler/SecLists.git /usr/local/share/wordli
 
 ### Basic Usage
 
-**If you set up an alias (recommended):**
 ```bash
 jsearch -u example.com
-```
-
-**From the project directory:**
-```bash
-python3 jsearch.py -u example.com
 ```
 
 ### Advanced Usage
@@ -152,15 +146,6 @@ jsearch -u example.com -p /tmp/bug_bounty_results
 
 # Save results to specific file
 jsearch -u example.com -o results.json
-```
-
-**From project directory:**
-```bash
-# Specify custom output directory
-python3 jsearch.py -u example.com -p /tmp/bug_bounty_results
-
-# Save results to specific file
-python3 jsearch.py -u example.com -o results.json
 ```
 
 ### Command Line Options
@@ -326,36 +311,3 @@ source ~/.bashrc
 **5. Timeout issues**
 - Increase timeout values in the script for slow networks
 - Reduce thread counts for stability
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
-### Development Setup
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## ⚠️ Disclaimer
-
-This tool is for educational and authorized testing purposes only. Users are responsible for complying with applicable laws and regulations. The authors are not responsible for any misuse of this tool.
-
-## 🙏 Acknowledgments
-
-- [ProjectDiscovery](https://github.com/projectdiscovery) for amazing reconnaissance tools
-- [Ffuf team](https://github.com/ffuf/ffuf) for the powerful fuzzer
-- [SecLists](https://github.com/danielmiessler/SecLists) for comprehensive wordlists
-- [Bug bounty community](https://bugcrowd.com) for inspiration and feedback
-
-## 📞 Support
-
-If you have any questions or need help, please:
-1. Check the [Issues](https://github.com/karlvidar/jsearch/issues) page
-2. Create a new issue if your problem isn't already reported
-3. Provide detailed information about your environment and the issue
