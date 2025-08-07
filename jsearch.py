@@ -241,34 +241,31 @@ class JSearch:
             self.log("Skipping ffuf subdomain discovery", "WARNING")
             return
         
-        output_file = os.path.join(self.output_path, "ffuf_results.json")
+        output_file = os.path.join(self.output_path, "ffuf_results.txt")
         command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
+        
+        # Store count before ffuf
+        initial_count = len(self.subdomains)
         
         self.run_command_live(command, "ffuf subdomain fuzzing")
         
         if os.path.exists(output_file):
             try:
                 with open(output_file, 'r') as f:
-                    content = f.read().strip()
-                    if content:
-                        initial_count = len(self.subdomains)
-                        
-                        # Parse each line as a separate JSON object (newline-delimited JSON)
-                        for line in content.split('\n'):
-                            if line.strip():
-                                try:
-                                    result = json.loads(line)
-                                    subdomain = result.get('url', '').replace('https://', '').replace('http://', '').strip('/')
-                                    if subdomain and subdomain not in self.subdomains:
-                                        self.subdomains.add(subdomain)
-                                        print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {subdomain}")
-                                except json.JSONDecodeError:
-                                    continue
-                        
-                        new_count = len(self.subdomains) - initial_count
-                        self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
-                    else:
-                        self.log("No ffuf results in output file", "WARNING")
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith('#'):  # Skip comments
+                            # Extract URL from ffuf output line
+                            # Ffuf output format: URL [Status: XXX, Size: XXX, Words: XXX, Lines: XXX]
+                            if '[Status:' in line:
+                                url = line.split('[Status:')[0].strip()
+                                subdomain = url.replace('https://', '').replace('http://', '').strip('/')
+                                if subdomain and subdomain not in self.subdomains:
+                                    self.subdomains.add(subdomain)
+                                    print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {subdomain}")
+                
+                new_count = len(self.subdomains) - initial_count
+                self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
             except Exception as e:
                 self.log(f"Failed to parse ffuf output: {str(e)}", "ERROR")
         else:
