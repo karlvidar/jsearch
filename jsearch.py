@@ -255,14 +255,18 @@ class JSearch:
                     for line in f:
                         line = line.strip()
                         if line and not line.startswith('#'):  # Skip comments
-                            # Extract URL from ffuf output line
-                            # Ffuf output format: URL [Status: XXX, Size: XXX, Words: XXX, Lines: XXX]
+                            # Extract subdomain from ffuf output line
+                            # Ffuf output format: subdomain                     [Status: XXX, Size: XXX, ...]
                             if '[Status:' in line:
-                                url = line.split('[Status:')[0].strip()
-                                subdomain = url.replace('https://', '').replace('http://', '').strip('/')
-                                if subdomain and subdomain not in self.subdomains:
-                                    self.subdomains.add(subdomain)
-                                    print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {subdomain}")
+                                # Split on the first occurrence of whitespace before [Status:
+                                parts = line.split()
+                                if parts:
+                                    subdomain_part = parts[0]  # First part is the subdomain
+                                    # Construct full subdomain
+                                    full_subdomain = f"{subdomain_part}.{self.target_url}"
+                                    if full_subdomain not in self.subdomains:
+                                        self.subdomains.add(full_subdomain)
+                                        print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_subdomain}")
                 
                 new_count = len(self.subdomains) - initial_count
                 self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
