@@ -233,7 +233,7 @@ class JSearch:
         self.log("Starting subdomain fuzzing with ffuf...")
         
         # Use custom wordlist if provided, otherwise use default paths
-        wordlist_path = self.custom_wordlist or "/usr/share/wordlists/seclists/Discovery/DNS/bug-bounty-program-subdomains-trickest-inventory.txt"
+        wordlist_path = self.custom_wordlist or "/usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-500.txt"
         
         # Check if wordlist exists
         if not os.path.exists(wordlist_path):
