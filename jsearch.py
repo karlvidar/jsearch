@@ -310,11 +310,13 @@ class JSearch:
                 if full_sub:
                     found_by_ffuf.add(full_sub)
         
-        # Determine truly new subdomains (compare after ffuf completes)
-        new_from_ffuf = [h for h in found_by_ffuf if h not in self.subdomains]
-        for h in new_from_ffuf:
-            self.subdomains.add(h)
-            print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {h}")
+        # Only count as new if NOT found by subfinder (use subfinder_results as baseline)
+        new_from_ffuf = []
+        for h in found_by_ffuf:
+            if h not in self.subfinder_results and h not in self.subdomains:
+                new_from_ffuf.append(h)
+                self.subdomains.add(h)
+                print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {h}")
         
         # Report count of new subdomains from ffuf only
         self.log(f"Found {len(new_from_ffuf)} new subdomains with ffuf", "SUCCESS")
