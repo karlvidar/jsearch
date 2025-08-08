@@ -124,17 +124,18 @@ class JSearch:
                 if output:
                     line = output.strip()
                     if filter_mantra_banner and "mantra secret analysis" in description.lower():
-                        # Only print [+/−] lines, skip banner or anything else
                         if line.startswith('[+]') or line.startswith('[-]'):
                             print(line)
                     elif "subfinder subdomain discovery" in description.lower():
                         if line.strip():
                             print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {line}")
                     elif "ffuf subdomain fuzzing" in description.lower():
-                        # Show ffuf output as-is without any prefix
-                        print(line)
+                        # Only show ffuf match lines; skip summary lists or other noise
+                        if '[Status:' in line:
+                            print(line)
+                        # else skip
                     else:
-                        print(line)  # Show everything else
+                        print(line)
                     output_lines.append(output)
 
             # Wait for process to complete and get any remaining output
@@ -229,7 +230,7 @@ class JSearch:
         if self.skip_ffuf:
             self.log("Skipping ffuf subdomain discovery", "INFO")
             return
-            
+        
         self.log("Starting subdomain fuzzing with ffuf...")
         
         # Use custom wordlist if provided, otherwise use default paths
@@ -244,10 +245,10 @@ class JSearch:
         output_file = os.path.join(self.output_path, "ffuf_results.txt")
         command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
         
-        # Store count before ffuf
-        initial_count = len(self.subdomains)
+        # Track only the truly new ones discovered by ffuf in this run
+        new_from_ffuf = set()
         
-        # Run ffuf and capture both live output and parse results
+        # Run ffuf and capture live output
         output = self.run_command_live(command, "ffuf subdomain fuzzing")
         
         # Parse the live output to extract subdomains in real-time
@@ -259,18 +260,16 @@ class JSearch:
                     # Ffuf output format: subdomain                     [Status: XXX, Size: XXX, ...]
                     parts = line.split()
                     if parts:
-                        subdomain_part = parts[0]  # First part is the subdomain
-                        # Construct full subdomain
-                        full_subdomain = f"{subdomain_part}.{self.target_url}"
-                        if full_subdomain not in self.subdomains:
-                            self.subdomains.add(full_subdomain)
-                            print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_subdomain}")
+                        sub_part = parts[0].strip().strip('.')
+                        if sub_part:
+                            full_sub = f"{sub_part}.{self.target_url}"
+                            if full_sub not in self.subdomains:
+                                self.subdomains.add(full_sub)
+                                new_from_ffuf.add(full_sub)
+                                print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_sub}")
         
-        # Don't parse from output file since we already parsed live output
-        # This prevents duplicate processing and output
-        
-        new_count = len(self.subdomains) - initial_count
-        self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
+        # Report count of new subdomains from ffuf only
+        self.log(f"Found {len(new_from_ffuf)} new subdomains with ffuf", "SUCCESS")
     
     def check_live_domains(self):
         """Check which domains are live using httpx"""
