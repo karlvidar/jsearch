@@ -286,19 +286,6 @@ class JSearch:
             self.log("Skipping ffuf subdomain discovery", "INFO")
             return
         
-        # Debug: Show what subfinder found
-        if len(self.subfinder_results) > 0:
-            self.log(f"Subfinder baseline contains: {sorted(list(self.subfinder_results))[:10]}{'...' if len(self.subfinder_results) > 10 else ''}", "INFO")
-            # Show a few specific domains we expect to find
-            test_domains = ['ftp.landspitali.is', 'www.landspitali.is', 'docs.landspitali.is', 'vpn.landspitali.is']
-            for domain in test_domains:
-                if domain in self.subfinder_results:
-                    self.log(f"✓ {domain} IS in subfinder baseline", "INFO")
-                else:
-                    self.log(f"✗ {domain} NOT in subfinder baseline", "WARNING")
-        else:
-            self.log("WARNING: No subfinder results found - all ffuf results will be marked as new", "WARNING")
-        
         self.log("Starting subdomain fuzzing with ffuf...")
         
         # Use custom wordlist if provided, otherwise use default paths
@@ -346,8 +333,6 @@ class JSearch:
                 new_from_ffuf.append(h)
                 self.subdomains.add(h)
                 print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {h} (NEW)")
-            else:
-                print(f"SKIP: {h} already found by subfinder")
         
         # Report count of new subdomains from ffuf only
         self.log(f"Found {len(new_from_ffuf)} new subdomains with ffuf", "SUCCESS")
