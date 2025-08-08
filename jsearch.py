@@ -284,16 +284,13 @@ class JSearch:
         output_file = os.path.join(self.output_path, "ffuf_results.txt")
         command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
         
-        # Snapshot exact subfinder results as baseline (not everything accumulated later)
-        baseline_subs = set(self.subfinder_results)
-        
-        # Track only the truly new ones discovered by ffuf in this run
-        new_from_ffuf = set()
+        # Collect everything ffuf finds first; we'll add only new ones after ffuf finishes
+        found_by_ffuf: Set[str] = set()
         
         # Run ffuf and capture live output
         output = self.run_command_live(command, "ffuf subdomain fuzzing")
         
-        # Parse the live output to extract subdomains in real-time
+        # Parse the live output to extract candidates
         if output:
             for raw in output.split('\n'):
                 line = raw.strip()
@@ -310,11 +307,14 @@ class JSearch:
                 else:
                     candidate = f"{left}.{self.target_url}"
                 full_sub = self.normalize_host(candidate)
-                # Guard against any duplicates from either subfinder baseline or the current global set
-                if full_sub and full_sub not in baseline_subs and full_sub not in self.subdomains and full_sub not in new_from_ffuf:
-                    self.subdomains.add(full_sub)
-                    new_from_ffuf.add(full_sub)
-                    print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_sub}")
+                if full_sub:
+                    found_by_ffuf.add(full_sub)
+        
+        # Determine truly new subdomains (compare after ffuf completes)
+        new_from_ffuf = [h for h in found_by_ffuf if h not in self.subdomains]
+        for h in new_from_ffuf:
+            self.subdomains.add(h)
+            print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {h}")
         
         # Report count of new subdomains from ffuf only
         self.log(f"Found {len(new_from_ffuf)} new subdomains with ffuf", "SUCCESS")
