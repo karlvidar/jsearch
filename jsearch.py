@@ -313,7 +313,7 @@ class JSearch:
         # Only count as new if NOT found by subfinder (use subfinder_results as baseline)
         new_from_ffuf = []
         for h in found_by_ffuf:
-            if h not in self.subfinder_results and h not in self.subdomains:
+            if h not in self.subfinder_results:
                 new_from_ffuf.append(h)
                 self.subdomains.add(h)
                 print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {h}")
