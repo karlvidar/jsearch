@@ -47,6 +47,8 @@ class JSearch:
         self.live_domains: Set[str] = set()
         self.live_domains_ordered: List[str] = []  # Maintain order for processing
         self.js_files: Set[str] = set()
+        # Track exactly what subfinder discovered to avoid counting these as new in ffuf
+        self.subfinder_results: Set[str] = set()
         
         # Configuration options
         self.custom_wordlist = None
@@ -224,7 +226,9 @@ class JSearch:
         self.log("Starting subdomain discovery with subfinder...")
         
         # Add the target URL itself as the first subdomain (normalized)
-        self.subdomains.add(self.normalize_host(self.target_url))
+        norm_target = self.normalize_host(self.target_url)
+        self.subdomains.add(norm_target)
+        self.subfinder_results.add(norm_target)
         
         output_file = os.path.join(self.output_path, "subfinder_results.txt")
         command = f"subfinder -d {self.target_url} -o {output_file}"
@@ -233,7 +237,6 @@ class JSearch:
         
         # Also parse live stdout from subfinder to avoid any file-write gaps
         if sf_output:
-            norm_target = self.normalize_host(self.target_url)
             for line in sf_output.split('\n'):
                 cand = self.normalize_host(line)
                 if not cand:
@@ -242,16 +245,19 @@ class JSearch:
                 if cand == norm_target or cand.endswith('.' + norm_target):
                     if cand not in self.subdomains:
                         self.subdomains.add(cand)
+                    self.subfinder_results.add(cand)
         
         if os.path.exists(output_file):
             with open(output_file, 'r') as f:
                 for line in f:
                     subdomain = self.normalize_host(line)
-                    if subdomain and subdomain not in self.subdomains:
-                        self.subdomains.add(subdomain)
+                    if subdomain:
+                        if subdomain not in self.subdomains:
+                            self.subdomains.add(subdomain)
+                        self.subfinder_results.add(subdomain)
                         # Don't print here since we already saw it in live output
             
-            self.log(f"Found {len(self.subdomains)} subdomains with subfinder", "SUCCESS")
+            self.log(f"Found {len(self.subfinder_results)} subdomains with subfinder", "SUCCESS")
         else:
             self.log("No subfinder results file found", "WARNING")
     
@@ -275,8 +281,8 @@ class JSearch:
         output_file = os.path.join(self.output_path, "ffuf_results.txt")
         command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
         
-        # Snapshot subdomains discovered so far (from subfinder) for accurate "new" comparison
-        baseline_subs = set(self.subdomains)
+        # Snapshot exact subfinder results as baseline (not everything accumulated later)
+        baseline_subs = set(self.subfinder_results)
         
         # Track only the truly new ones discovered by ffuf in this run
         new_from_ffuf = set()
