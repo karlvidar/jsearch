@@ -113,8 +113,8 @@ class JSearch:
             h = h[7:]
         elif h.startswith('https://'):
             h = h[8:]
-        # Remove ANSI escape codes if present
-        h = re.sub(r'\x1b\[[0-9;]*m', '', h)
+        # Remove ANSI escape codes if present (including cursor control sequences)
+        h = re.sub(r'\x1b\[[0-9;]*[mKHfABCDJG]', '', h)
         # Remove path, query, fragment
         for sep in ['/', '?', '#']:
             if sep in h:
@@ -340,11 +340,7 @@ class JSearch:
         
         # Only count as new if NOT found by subfinder (use subfinder_results as baseline)
         new_from_ffuf = []
-        print(f"DEBUG: found_by_ffuf contains: {sorted(list(found_by_ffuf))}")
-        print(f"DEBUG: subfinder_results contains: {sorted(list(self.subfinder_results))}")
-        print(f"DEBUG: Comparing ffuf results against subfinder baseline...")
         for h in found_by_ffuf:
-            print(f"DEBUG: Checking '{h}' in subfinder_results: {h in self.subfinder_results}")
             if h not in self.subfinder_results:
                 new_from_ffuf.append(h)
                 self.subdomains.add(h)
