@@ -266,22 +266,8 @@ class JSearch:
                             self.subdomains.add(full_subdomain)
                             print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_subdomain}")
         
-        # Also try to parse from output file if it exists
-        if os.path.exists(output_file):
-            try:
-                with open(output_file, 'r') as f:
-                    for line in f:
-                        line = line.strip()
-                        if line and not line.startswith('#') and '[Status:' in line:
-                            parts = line.split()
-                            if parts:
-                                subdomain_part = parts[0]
-                                full_subdomain = f"{subdomain_part}.{self.target_url}"
-                                if full_subdomain not in self.subdomains:
-                                    self.subdomains.add(full_subdomain)
-                                    print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_subdomain}")
-            except Exception as e:
-                self.log(f"Failed to parse ffuf output file: {str(e)}", "ERROR")
+        # Don't parse from output file since we already parsed live output
+        # This prevents duplicate processing and output
         
         new_count = len(self.subdomains) - initial_count
         self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
