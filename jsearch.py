@@ -247,33 +247,44 @@ class JSearch:
         # Store count before ffuf
         initial_count = len(self.subdomains)
         
-        self.run_command_live(command, "ffuf subdomain fuzzing")
+        # Run ffuf and capture both live output and parse results
+        output = self.run_command_live(command, "ffuf subdomain fuzzing")
         
+        # Parse the live output to extract subdomains in real-time
+        if output:
+            for line in output.split('\n'):
+                line = line.strip()
+                if line and '[Status:' in line:
+                    # Extract subdomain from ffuf output line
+                    # Ffuf output format: subdomain                     [Status: XXX, Size: XXX, ...]
+                    parts = line.split()
+                    if parts:
+                        subdomain_part = parts[0]  # First part is the subdomain
+                        # Construct full subdomain
+                        full_subdomain = f"{subdomain_part}.{self.target_url}"
+                        if full_subdomain not in self.subdomains:
+                            self.subdomains.add(full_subdomain)
+                            print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_subdomain}")
+        
+        # Also try to parse from output file if it exists
         if os.path.exists(output_file):
             try:
                 with open(output_file, 'r') as f:
                     for line in f:
                         line = line.strip()
-                        if line and not line.startswith('#'):  # Skip comments
-                            # Extract subdomain from ffuf output line
-                            # Ffuf output format: subdomain                     [Status: XXX, Size: XXX, ...]
-                            if '[Status:' in line:
-                                # Split on the first occurrence of whitespace before [Status:
-                                parts = line.split()
-                                if parts:
-                                    subdomain_part = parts[0]  # First part is the subdomain
-                                    # Construct full subdomain
-                                    full_subdomain = f"{subdomain_part}.{self.target_url}"
-                                    if full_subdomain not in self.subdomains:
-                                        self.subdomains.add(full_subdomain)
-                                        print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_subdomain}")
-                
-                new_count = len(self.subdomains) - initial_count
-                self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
+                        if line and not line.startswith('#') and '[Status:' in line:
+                            parts = line.split()
+                            if parts:
+                                subdomain_part = parts[0]
+                                full_subdomain = f"{subdomain_part}.{self.target_url}"
+                                if full_subdomain not in self.subdomains:
+                                    self.subdomains.add(full_subdomain)
+                                    print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_subdomain}")
             except Exception as e:
-                self.log(f"Failed to parse ffuf output: {str(e)}", "ERROR")
-        else:
-            self.log("No ffuf results file found", "WARNING")
+                self.log(f"Failed to parse ffuf output file: {str(e)}", "ERROR")
+        
+        new_count = len(self.subdomains) - initial_count
+        self.log(f"Found {new_count} new subdomains with ffuf", "SUCCESS")
     
     def check_live_domains(self):
         """Check which domains are live using httpx"""
