@@ -21,6 +21,7 @@ import sys
 import subprocess
 import json
 import time
+import re
 from pathlib import Path
 from datetime import datetime
 from typing import Set, List
@@ -112,6 +113,8 @@ class JSearch:
             h = h[7:]
         elif h.startswith('https://'):
             h = h[8:]
+        # Remove ANSI escape codes if present
+        h = re.sub(r'\x1b\[[0-9;]*m', '', h)
         # Remove path, query, fragment
         for sep in ['/', '?', '#']:
             if sep in h:
@@ -292,12 +295,13 @@ class JSearch:
         
         # Parse the live output to extract subdomains in real-time
         if output:
-            for line in output.split('\n'):
-                line = line.strip()
+            for raw in output.split('\n'):
+                line = raw.strip()
                 if not line or '[Status:' not in line:
                     continue
-                # Prefer the literal text before "[Status:" to avoid spacing issues
-                left = line.split('[Status:', 1)[0].strip().strip('.')
+                # Strip ANSI codes and extract left side before status
+                clean_line = re.sub(r'\x1b\[[0-9;]*m', '', line)
+                left = clean_line.split('[Status:', 1)[0].strip().strip('.')
                 if not left:
                     continue
                 # If ffuf printed a full FQDN, use it as-is; otherwise append the target
@@ -306,7 +310,8 @@ class JSearch:
                 else:
                     candidate = f"{left}.{self.target_url}"
                 full_sub = self.normalize_host(candidate)
-                if full_sub and full_sub not in baseline_subs and full_sub not in new_from_ffuf:
+                # Guard against any duplicates from either subfinder baseline or the current global set
+                if full_sub and full_sub not in baseline_subs and full_sub not in self.subdomains and full_sub not in new_from_ffuf:
                     self.subdomains.add(full_sub)
                     new_from_ffuf.add(full_sub)
                     print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_sub}")
