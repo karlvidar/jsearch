@@ -255,20 +255,29 @@ class JSearch:
                 for line in f:
                     subdomain = self.normalize_host(line)
                     if subdomain:
-                        if subdomain not in self.subdomains:
-                            self.subdomains.add(subdomain)
-                        self.subfinder_results.add(subdomain)
+                        # Only accept domains that are the target or a subdomain of the target
+                        if subdomain == norm_target or subdomain.endswith('.' + norm_target):
+                            if subdomain not in self.subdomains:
+                                self.subdomains.add(subdomain)
+                            self.subfinder_results.add(subdomain)
                         # Don't print here since we already saw it in live output
             
             self.log(f"Found {len(self.subfinder_results)} subdomains with subfinder", "SUCCESS")
         else:
-            self.log("No subfinder results file found", "WARNING")
+            # If no file was created, at least we have the live parsing results
+            self.log(f"No subfinder results file found, using live output: {len(self.subfinder_results)} subdomains", "WARNING")
     
     def discover_subdomains_ffuf(self):
         """Discover subdomains using ffuf with wordlist"""
         if self.skip_ffuf:
             self.log("Skipping ffuf subdomain discovery", "INFO")
             return
+        
+        # Debug: Show what subfinder found
+        if len(self.subfinder_results) > 0:
+            self.log(f"Subfinder baseline contains: {sorted(list(self.subfinder_results))[:10]}{'...' if len(self.subfinder_results) > 10 else ''}", "INFO")
+        else:
+            self.log("WARNING: No subfinder results found - all ffuf results will be marked as new", "WARNING")
         
         self.log("Starting subdomain fuzzing with ffuf...")
         
