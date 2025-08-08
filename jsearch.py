@@ -114,7 +114,8 @@ class JSearch:
         elif h.startswith('https://'):
             h = h[8:]
         # Remove ANSI escape codes if present (including cursor control sequences)
-        h = re.sub(r'\x1b\[[0-9;]*[mKHfABCDJG]', '', h)
+        # Updated regex to handle both uppercase and lowercase command letters
+        h = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', h)
         # Remove path, query, fragment
         for sep in ['/', '?', '#']:
             if sep in h:
