@@ -229,7 +229,19 @@ class JSearch:
         output_file = os.path.join(self.output_path, "subfinder_results.txt")
         command = f"subfinder -d {self.target_url} -o {output_file}"
         
-        self.run_command_live(command, "subfinder subdomain discovery")
+        sf_output = self.run_command_live(command, "subfinder subdomain discovery")
+        
+        # Also parse live stdout from subfinder to avoid any file-write gaps
+        if sf_output:
+            norm_target = self.normalize_host(self.target_url)
+            for line in sf_output.split('\n'):
+                cand = self.normalize_host(line)
+                if not cand:
+                    continue
+                # Only accept domains that are the target or a subdomain of the target
+                if cand == norm_target or cand.endswith('.' + norm_target):
+                    if cand not in self.subdomains:
+                        self.subdomains.add(cand)
         
         if os.path.exists(output_file):
             with open(output_file, 'r') as f:
@@ -263,6 +275,9 @@ class JSearch:
         output_file = os.path.join(self.output_path, "ffuf_results.txt")
         command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
         
+        # Snapshot subdomains discovered so far (from subfinder) for accurate "new" comparison
+        baseline_subs = set(self.subdomains)
+        
         # Track only the truly new ones discovered by ffuf in this run
         new_from_ffuf = set()
         
@@ -285,7 +300,7 @@ class JSearch:
                 else:
                     candidate = f"{left}.{self.target_url}"
                 full_sub = self.normalize_host(candidate)
-                if full_sub and full_sub not in self.subdomains and full_sub not in new_from_ffuf:
+                if full_sub and full_sub not in baseline_subs and full_sub not in new_from_ffuf:
                     self.subdomains.add(full_sub)
                     new_from_ffuf.add(full_sub)
                     print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_sub}")
