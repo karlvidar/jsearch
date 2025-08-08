@@ -251,6 +251,10 @@ class JSearch:
                     self.subfinder_results.add(cand)
         
         if os.path.exists(output_file):
+            # File reading is authoritative - clear any live parsing results first
+            file_based_results = set()
+            file_based_results.add(norm_target)  # Always include the base domain
+            
             with open(output_file, 'r') as f:
                 for line in f:
                     subdomain = self.normalize_host(line)
@@ -259,9 +263,10 @@ class JSearch:
                         if subdomain == norm_target or subdomain.endswith('.' + norm_target):
                             if subdomain not in self.subdomains:
                                 self.subdomains.add(subdomain)
-                            self.subfinder_results.add(subdomain)
-                        # Don't print here since we already saw it in live output
+                            file_based_results.add(subdomain)
             
+            # Use file-based results as the authoritative subfinder baseline
+            self.subfinder_results = file_based_results
             self.log(f"Found {len(self.subfinder_results)} subdomains with subfinder", "SUCCESS")
         else:
             # If no file was created, at least we have the live parsing results
@@ -276,6 +281,13 @@ class JSearch:
         # Debug: Show what subfinder found
         if len(self.subfinder_results) > 0:
             self.log(f"Subfinder baseline contains: {sorted(list(self.subfinder_results))[:10]}{'...' if len(self.subfinder_results) > 10 else ''}", "INFO")
+            # Show a few specific domains we expect to find
+            test_domains = ['ftp.landspitali.is', 'www.landspitali.is', 'docs.landspitali.is', 'vpn.landspitali.is']
+            for domain in test_domains:
+                if domain in self.subfinder_results:
+                    self.log(f"✓ {domain} IS in subfinder baseline", "INFO")
+                else:
+                    self.log(f"✗ {domain} NOT in subfinder baseline", "WARNING")
         else:
             self.log("WARNING: No subfinder results found - all ffuf results will be marked as new", "WARNING")
         
@@ -325,7 +337,9 @@ class JSearch:
             if h not in self.subfinder_results:
                 new_from_ffuf.append(h)
                 self.subdomains.add(h)
-                print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {h}")
+                print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {h} (NEW)")
+            else:
+                print(f"SKIP: {h} already found by subfinder")
         
         # Report count of new subdomains from ffuf only
         self.log(f"Found {len(new_from_ffuf)} new subdomains with ffuf", "SUCCESS")
