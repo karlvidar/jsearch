@@ -100,6 +100,24 @@ class JSearch:
         color = color_map.get(level, Colors.LIGHT_BLUE)
         print(f"{color}[{timestamp}] [{level}] {message}{Colors.END}")
     
+    def normalize_host(self, host: str) -> str:
+        """Normalize a hostname for consistent comparisons and storage."""
+        if not host:
+            return ""
+        h = host.strip().lower()
+        # Strip scheme if present
+        if h.startswith('http://'):
+            h = h[7:]
+        elif h.startswith('https://'):
+            h = h[8:]
+        # Remove path, query, fragment
+        for sep in ['/', '?', '#']:
+            if sep in h:
+                h = h.split(sep, 1)[0]
+        # Trim leading/trailing dots and whitespace
+        h = h.strip().strip('.')
+        return h
+    
     def run_command_live(self, command: str, description: str, filter_mantra_banner: bool = False) -> str:
         """Run a shell command and show live output"""
         self.log(f"Running: {description}")
@@ -205,8 +223,8 @@ class JSearch:
         """Discover subdomains using subfinder"""
         self.log("Starting subdomain discovery with subfinder...")
         
-        # Add the target URL itself as the first subdomain
-        self.subdomains.add(self.target_url)
+        # Add the target URL itself as the first subdomain (normalized)
+        self.subdomains.add(self.normalize_host(self.target_url))
         
         output_file = os.path.join(self.output_path, "subfinder_results.txt")
         command = f"subfinder -d {self.target_url} -o {output_file}"
@@ -216,7 +234,7 @@ class JSearch:
         if os.path.exists(output_file):
             with open(output_file, 'r') as f:
                 for line in f:
-                    subdomain = line.strip()
+                    subdomain = self.normalize_host(line)
                     if subdomain and subdomain not in self.subdomains:
                         self.subdomains.add(subdomain)
                         # Don't print here since we already saw it in live output
@@ -255,18 +273,22 @@ class JSearch:
         if output:
             for line in output.split('\n'):
                 line = line.strip()
-                if line and '[Status:' in line:
-                    # Extract subdomain from ffuf output line
-                    # Ffuf output format: subdomain                     [Status: XXX, Size: XXX, ...]
-                    parts = line.split()
-                    if parts:
-                        sub_part = parts[0].strip().strip('.')
-                        if sub_part:
-                            full_sub = f"{sub_part}.{self.target_url}"
-                            if full_sub not in self.subdomains:
-                                self.subdomains.add(full_sub)
-                                new_from_ffuf.add(full_sub)
-                                print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_sub}")
+                if not line or '[Status:' not in line:
+                    continue
+                # Prefer the literal text before "[Status:" to avoid spacing issues
+                left = line.split('[Status:', 1)[0].strip().strip('.')
+                if not left:
+                    continue
+                # If ffuf printed a full FQDN, use it as-is; otherwise append the target
+                if '.' in left:
+                    candidate = left
+                else:
+                    candidate = f"{left}.{self.target_url}"
+                full_sub = self.normalize_host(candidate)
+                if full_sub and full_sub not in self.subdomains and full_sub not in new_from_ffuf:
+                    self.subdomains.add(full_sub)
+                    new_from_ffuf.add(full_sub)
+                    print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {full_sub}")
         
         # Report count of new subdomains from ffuf only
         self.log(f"Found {len(new_from_ffuf)} new subdomains with ffuf", "SUCCESS")
