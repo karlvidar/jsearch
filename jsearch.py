@@ -251,7 +251,11 @@ class JSearch:
                     self.subfinder_results.add(cand)
         
         if os.path.exists(output_file):
-            # File reading is authoritative - clear any live parsing results first
+            # Small delay to ensure file writing is complete
+            import time
+            time.sleep(0.5)
+            
+            # File reading is authoritative - but only if it gives us more or equal results
             file_based_results = set()
             file_based_results.add(norm_target)  # Always include the base domain
             
@@ -265,9 +269,12 @@ class JSearch:
                                 self.subdomains.add(subdomain)
                             file_based_results.add(subdomain)
             
-            # Use file-based results as the authoritative subfinder baseline
-            self.subfinder_results = file_based_results
-            self.log(f"Found {len(self.subfinder_results)} subdomains with subfinder", "SUCCESS")
+            # Only use file-based results if they're at least as good as live parsing
+            if len(file_based_results) >= len(self.subfinder_results):
+                self.subfinder_results = file_based_results
+                self.log(f"Found {len(self.subfinder_results)} subdomains with subfinder", "SUCCESS")
+            else:
+                self.log(f"File has {len(file_based_results)} results vs live {len(self.subfinder_results)}, keeping live results", "WARNING")
         else:
             # If no file was created, at least we have the live parsing results
             self.log(f"No subfinder results file found, using live output: {len(self.subfinder_results)} subdomains", "WARNING")
@@ -333,7 +340,11 @@ class JSearch:
         
         # Only count as new if NOT found by subfinder (use subfinder_results as baseline)
         new_from_ffuf = []
+        print(f"DEBUG: found_by_ffuf contains: {sorted(list(found_by_ffuf))}")
+        print(f"DEBUG: subfinder_results contains: {sorted(list(self.subfinder_results))}")
+        print(f"DEBUG: Comparing ffuf results against subfinder baseline...")
         for h in found_by_ffuf:
+            print(f"DEBUG: Checking '{h}' in subfinder_results: {h in self.subfinder_results}")
             if h not in self.subfinder_results:
                 new_from_ffuf.append(h)
                 self.subdomains.add(h)
