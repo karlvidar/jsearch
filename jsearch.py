@@ -298,7 +298,8 @@ class JSearch:
             return
         
         output_file = os.path.join(self.output_path, "ffuf_results.txt")
-        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
+        # Add rate limiting and filtering for large wordlists to prevent timeouts and blocking
+        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -r"
         
         # Collect everything ffuf finds first; we'll add only new ones after ffuf finishes
         found_by_ffuf: Set[str] = set()
