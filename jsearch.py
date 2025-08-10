@@ -128,15 +128,27 @@ class JSearch:
         """Run a shell command and show live output"""
         self.log(f"Running: {description}")
         try:
-            process = subprocess.Popen(
-                command,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-                universal_newlines=True
-            )
+            # For ffuf with large wordlists, use unbuffered output to prevent hanging
+            if "ffuf" in command.lower():
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=0,  # Unbuffered for ffuf
+                    universal_newlines=True
+                )
+            else:
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=1,
+                    universal_newlines=True
+                )
 
             output_lines = []
 
@@ -157,7 +169,8 @@ class JSearch:
                         # Only show ffuf match lines; skip summary lists or other noise
                         if '[Status:' in line:
                             print(line)
-                        # else skip
+                        # For ffuf, flush stdout to prevent buffering issues
+                        sys.stdout.flush()
                     else:
                         print(line)
                     output_lines.append(output)
@@ -298,8 +311,7 @@ class JSearch:
             return
         
         output_file = os.path.join(self.output_path, "ffuf_results.txt")
-        # Add rate limiting and filtering for large wordlists to prevent timeouts and blocking
-        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -r"
+        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
         
         # Collect everything ffuf finds first; we'll add only new ones after ffuf finishes
         found_by_ffuf: Set[str] = set()
