@@ -128,27 +128,19 @@ class JSearch:
         """Run a shell command and show live output"""
         self.log(f"Running: {description}")
         try:
-            # For ffuf with large wordlists, use unbuffered output to prevent hanging
+            # For ffuf with large wordlists, use a different approach to prevent hanging
             if "ffuf" in command.lower():
-                process = subprocess.Popen(
-                    command,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    bufsize=0,  # Unbuffered for ffuf
-                    universal_newlines=True
-                )
-            else:
-                process = subprocess.Popen(
-                    command,
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True,
-                    bufsize=1,
-                    universal_newlines=True
-                )
+                return self._run_ffuf_command(command, description)
+            
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
 
             output_lines = []
 
@@ -165,12 +157,6 @@ class JSearch:
                     elif "subfinder subdomain discovery" in description.lower():
                         if line.strip():
                             print(f"{Colors.DARK_BLUE}[SUBDOMAIN]{Colors.END} {line}")
-                    elif "ffuf subdomain fuzzing" in description.lower():
-                        # Only show ffuf match lines; skip summary lists or other noise
-                        if '[Status:' in line:
-                            print(line)
-                        # For ffuf, flush stdout to prevent buffering issues
-                        sys.stdout.flush()
                     else:
                         print(line)
                     output_lines.append(output)
@@ -192,6 +178,79 @@ class JSearch:
 
         except Exception as e:
             self.log(f"Exception running {description}: {str(e)}", "ERROR")
+            return ""
+    
+    def _run_ffuf_command(self, command: str, description: str) -> str:
+        """Special handling for ffuf commands to prevent hanging with large wordlists"""
+        import select
+        import threading
+        import queue
+        
+        try:
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=0,
+                universal_newlines=True
+            )
+            
+            output_lines = []
+            
+            # Use select to check if data is available (Unix-like systems)
+            if hasattr(select, 'select'):
+                while process.poll() is None:
+                    ready, _, _ = select.select([process.stdout], [], [], 1.0)  # 1 second timeout
+                    if ready:
+                        line = process.stdout.readline()
+                        if line:
+                            line = line.strip()
+                            if '[Status:' in line:
+                                print(line)
+                                sys.stdout.flush()
+                            output_lines.append(line + '\n')
+            else:
+                # Fallback for Windows - use threading approach
+                def read_output(process, output_list):
+                    try:
+                        while True:
+                            line = process.stdout.readline()
+                            if not line:
+                                break
+                            line = line.strip()
+                            if '[Status:' in line:
+                                print(line)
+                                sys.stdout.flush()
+                            output_list.append(line + '\n')
+                    except:
+                        pass
+                
+                output_thread = threading.Thread(target=read_output, args=(process, output_lines))
+                output_thread.daemon = True
+                output_thread.start()
+                
+                # Wait for process to complete
+                process.wait()
+                output_thread.join(timeout=5)  # Give thread 5 seconds to finish
+            
+            # Get any remaining output
+            stdout, stderr = process.communicate()
+            if stdout:
+                output_lines.append(stdout)
+                
+            if process.returncode != 0 and stderr:
+                if not ("warning" in stderr.lower() and "config" in stderr.lower()):
+                    self.log(f"Error running {description}: {stderr}", "ERROR")
+                    return ""
+                elif "warning" in stderr.lower():
+                    self.log(f"Warning from {description}: {stderr.strip()}", "WARNING")
+            
+            return ''.join(output_lines)
+            
+        except Exception as e:
+            self.log(f"Exception running ffuf: {str(e)}", "ERROR")
             return ""
     
     def run_command(self, command: str, description: str) -> str:
