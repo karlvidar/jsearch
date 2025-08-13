@@ -587,19 +587,8 @@ class JSearch:
         
         self.log(f"Running mantra on {len(valid_js_files)} JS files...")
         
-        # Test if mantra is working at all with a simple test first
-        self.log("Testing mantra functionality...", "INFO")
-        test_command = "echo 'https://example.com/test.js' | mantra"
-        try:
-            test_result = subprocess.run(test_command, shell=True, capture_output=True, text=True, timeout=30)
-            if test_result.returncode == 0:
-                self.log("Mantra test successful - tool is working", "SUCCESS")
-            else:
-                self.log(f"Mantra test failed: {test_result.stderr}", "ERROR")
-                return
-        except Exception as e:
-            self.log(f"Mantra test error: {str(e)}", "ERROR")
-            return
+        # Skip the test - just run mantra directly on the actual file list
+        self.log("Starting mantra analysis...", "INFO")
         
         # Try different command approaches to see which one works
         commands_to_try = [
@@ -614,6 +603,8 @@ class JSearch:
             self.log(f"Trying approach {i+1}: {command}")
             
             try:
+                # Start the process
+                self.log(f"Starting mantra process...", "INFO")
                 process = subprocess.Popen(
                     command,
                     shell=True,
@@ -624,33 +615,48 @@ class JSearch:
                     universal_newlines=True
                 )
                 
+                self.log(f"Mantra process started, PID: {process.pid}", "INFO")
+                
                 output_lines = []
                 line_count = 0
+                last_output_time = time.time()
                 
                 # Read output line by line as it comes with progress indicators
                 while True:
                     output = process.stdout.readline()
                     if output == '' and process.poll() is not None:
                         break
+                    
                     if output:
                         line = output.strip()
                         line_count += 1
+                        last_output_time = time.time()
                         
                         # Show ALL output from mantra, not just [+] and [-]
                         print(line)
                         sys.stdout.flush()
                         
-                        # Also show progress every 50 lines to confirm it's working
-                        if line_count % 50 == 0:
-                            self.log(f"Mantra processing... {line_count} lines of output so far", "INFO")
+                        # Also show progress every 10 lines to confirm it's working
+                        if line_count % 10 == 0:
+                            self.log(f"Mantra output: {line_count} lines processed", "INFO")
                         
                         output_lines.append(output)
+                    else:
+                        # No output but process is still running - show periodic status
+                        current_time = time.time()
+                        if current_time - last_output_time > 30:  # 30 seconds without output
+                            self.log(f"Mantra still running... {line_count} lines so far, waiting for more output", "INFO")
+                            last_output_time = current_time
+                
+                self.log(f"Mantra finished reading output, waiting for process completion...", "INFO")
                 
                 # Wait for process to complete and get any remaining output
                 stdout, stderr = process.communicate()
                 if stdout:
                     print(stdout)
                     output_lines.append(stdout)
+                
+                self.log(f"Mantra process completed with return code: {process.returncode}", "INFO")
                 
                 # Write output to file
                 with open(output_file, 'w') as f:
