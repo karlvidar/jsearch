@@ -361,7 +361,7 @@ class JSearch:
         self.log("Starting subdomain fuzzing with ffuf...")
         
         # Use custom wordlist if provided, otherwise use default paths
-        wordlist_path = self.custom_wordlist or "/usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-110000.txt"
+        wordlist_path = self.custom_wordlist or "/usr/share/wordlists/seclists/Discovery/DNS/bitquark-subdomains-top100000.txt"
         
         # Check if wordlist exists
         if not os.path.exists(wordlist_path):
@@ -370,7 +370,8 @@ class JSearch:
             return
         
         output_file = os.path.join(self.output_path, "ffuf_results.txt")
-        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file}"
+        # Add rate limiting to prevent slowdowns with large wordlists
+        command = f"ffuf -w {wordlist_path} -u https://FUZZ.{self.target_url} -o {output_file} -rate 50 -t 25"
         
         # Collect everything ffuf finds first; we'll add only new ones after ffuf finishes
         found_by_ffuf: Set[str] = set()
