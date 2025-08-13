@@ -124,6 +124,8 @@ class JSearch:
         h = h.strip().strip('.')
         return h
     
+
+    
     def run_command_live(self, command: str, description: str, filter_mantra_banner: bool = False) -> str:
         """Run a shell command and show live output"""
         self.log(f"Running: {description}")
@@ -572,33 +574,51 @@ class JSearch:
             for js_file in valid_js_files:
                 f.write(f"{js_file}\n")
         
-        # Add additional mantra options for better handling of large lists and network issues
-        # -t: timeout per request, -c: concurrent workers, -s: silent mode for cleaner output
-        commands_to_try = [
-            f"cat {temp_file} | mantra -t 10 -c 5 | tee {output_file}",
-            f"type {temp_file} | mantra -t 10 -c 5 | tee {output_file}",  # Windows alternative to cat
-            f"cat {temp_file} | mantra | tee {output_file}",  # Fallback without flags
-            f"type {temp_file} | mantra | tee {output_file}"  # Windows fallback
-        ]
+        self.log(f"Running mantra on {len(valid_js_files)} JS files...")
         
-        success = False
-        for command in commands_to_try:
-            try:
-                self.log(f"Trying command: {command}")
-                
-                # Use run_command_live to show real-time output
-                output = self.run_command_live(command, "mantra secret analysis")
-                
-                if os.path.exists(output_file):
-                    success = True
+        # Simple approach: just run mantra and let it complete naturally
+        command = f"cat {temp_file} | mantra"
+        
+        try:
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
+            
+            output_lines = []
+            
+            # Read output line by line as it comes
+            while True:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
                     break
-                    
-            except Exception as e:
-                self.log(f"Error running mantra: {str(e)}", "ERROR")
-                continue
+                if output:
+                    line = output.strip()
+                    # Show live output for secrets found and errors
+                    if line.startswith('[+]') or line.startswith('[-]'):
+                        print(line)
+                        sys.stdout.flush()
+                    output_lines.append(output)
+            
+            # Wait for process to complete and get any remaining output
+            stdout, stderr = process.communicate()
+            if stdout:
+                output_lines.append(stdout)
+            
+            # Write output to file
+            with open(output_file, 'w') as f:
+                f.write(''.join(output_lines))
+            
+            if process.returncode != 0 and stderr:
+                self.log(f"Mantra stderr: {stderr.strip()}", "WARNING")
         
-        if not success:
-            self.log("Could not execute mantra with any known command format", "ERROR")
+        except Exception as e:
+            self.log(f"Error running mantra: {str(e)}", "ERROR")
             # Clean up temp file
             if os.path.exists(temp_file):
                 os.remove(temp_file)
@@ -614,12 +634,21 @@ class JSearch:
                     successful_finds = len([line for line in lines if line.startswith('[+]')])
                     error_requests = len([line for line in lines if line.startswith('[-]')])
                     
+                    # Calculate processed count (successful + failed)
+                    total_processed = successful_finds + error_requests
+                    
                     self.log(f"Mantra analysis complete! Found {successful_finds} secrets", "SUCCESS")
-                    self.log(f"Mantra had {error_requests} failed requests out of {len(valid_js_files)} valid JS files", "INFO")
+                    self.log(f"Mantra processed {total_processed} out of {len(valid_js_files)} JS files", "INFO")
                     
                     if error_requests > 0:
-                        self.log("Some JS files were unreachable (timeouts, 404s, network issues)", "WARNING")
-                        self.log("This is normal - some URLs from gau/katana may be stale or require authentication", "INFO")
+                        self.log(f"Mantra had {error_requests} failed requests (timeouts, 404s, network issues)", "WARNING")
+                        self.log("Failed requests are normal - some URLs from gau/katana may be stale or require authentication", "INFO")
+                    
+                    # Check if mantra processed significantly fewer files than expected
+                    if total_processed < len(valid_js_files) * 0.5:  # Less than 50% processed
+                        missing = len(valid_js_files) - total_processed
+                        self.log(f"Warning: {missing} JS files may not have been processed by mantra", "WARNING")
+                        self.log("This could indicate mantra encountered issues with the remaining URLs", "WARNING")
                     
                     # Show a few sample successful finds
                     successful_lines = [line for line in lines if line.startswith('[+]')]
