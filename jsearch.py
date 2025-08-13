@@ -365,11 +365,9 @@ class JSearch:
                 left = clean_line.split('[Status:', 1)[0].strip().strip('.')
                 if not left:
                     continue
-                # If ffuf printed a full FQDN, use it as-is; otherwise append the target
-                if '.' in left:
-                    candidate = left
-                else:
-                    candidate = f"{left}.{self.target_url}"
+                # ffuf replaces FUZZ with the wordlist entry, so we need to reconstruct the full domain
+                # The format is always: FUZZ.target_url, so left part + target = full subdomain
+                candidate = f"{left}.{self.target_url}"
                 full_sub = self.normalize_host(candidate)
                 if full_sub:
                     found_by_ffuf.add(full_sub)
