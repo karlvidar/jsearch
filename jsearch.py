@@ -574,51 +574,103 @@ class JSearch:
             for js_file in valid_js_files:
                 f.write(f"{js_file}\n")
         
+        # Debug: show first few URLs and file stats
+        self.log(f"Created temp file: {temp_file}", "INFO")
+        self.log(f"File size: {os.path.getsize(temp_file)} bytes", "INFO")
+        
+        # Show first 3 URLs for debugging
+        with open(temp_file, 'r') as f:
+            first_few = f.readlines()[:3]
+            self.log("First 3 URLs to analyze:", "INFO")
+            for i, url in enumerate(first_few, 1):
+                print(f"  {i}. {url.strip()}")
+        
         self.log(f"Running mantra on {len(valid_js_files)} JS files...")
         
-        # Simple approach: just run mantra and let it complete naturally
-        command = f"cat {temp_file} | mantra"
-        
+        # Test if mantra is working at all with a simple test first
+        self.log("Testing mantra functionality...", "INFO")
+        test_command = "echo 'https://example.com/test.js' | mantra"
         try:
-            process = subprocess.Popen(
-                command,
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                bufsize=1,
-                universal_newlines=True
-            )
+            test_result = subprocess.run(test_command, shell=True, capture_output=True, text=True, timeout=30)
+            if test_result.returncode == 0:
+                self.log("Mantra test successful - tool is working", "SUCCESS")
+            else:
+                self.log(f"Mantra test failed: {test_result.stderr}", "ERROR")
+                return
+        except Exception as e:
+            self.log(f"Mantra test error: {str(e)}", "ERROR")
+            return
+        
+        # Try different command approaches to see which one works
+        commands_to_try = [
+            f"cat {temp_file} | mantra",
+            f"mantra < {temp_file}",
+            f"mantra {temp_file}"
+        ]
+        
+        success = False
+        
+        for i, command in enumerate(commands_to_try):
+            self.log(f"Trying approach {i+1}: {command}")
             
-            output_lines = []
-            
-            # Read output line by line as it comes
-            while True:
-                output = process.stdout.readline()
-                if output == '' and process.poll() is not None:
-                    break
-                if output:
-                    line = output.strip()
-                    # Show live output for secrets found and errors
-                    if line.startswith('[+]') or line.startswith('[-]'):
+            try:
+                process = subprocess.Popen(
+                    command,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                    bufsize=0,  # Unbuffered
+                    universal_newlines=True
+                )
+                
+                output_lines = []
+                line_count = 0
+                
+                # Read output line by line as it comes with progress indicators
+                while True:
+                    output = process.stdout.readline()
+                    if output == '' and process.poll() is not None:
+                        break
+                    if output:
+                        line = output.strip()
+                        line_count += 1
+                        
+                        # Show ALL output from mantra, not just [+] and [-]
                         print(line)
                         sys.stdout.flush()
-                    output_lines.append(output)
+                        
+                        # Also show progress every 50 lines to confirm it's working
+                        if line_count % 50 == 0:
+                            self.log(f"Mantra processing... {line_count} lines of output so far", "INFO")
+                        
+                        output_lines.append(output)
+                
+                # Wait for process to complete and get any remaining output
+                stdout, stderr = process.communicate()
+                if stdout:
+                    print(stdout)
+                    output_lines.append(stdout)
+                
+                # Write output to file
+                with open(output_file, 'w') as f:
+                    f.write(''.join(output_lines))
+                
+                if process.returncode == 0:
+                    self.log(f"Mantra completed successfully with approach {i+1}", "SUCCESS")
+                    success = True
+                    break
+                else:
+                    self.log(f"Approach {i+1} failed with return code {process.returncode}", "WARNING")
+                    if stderr:
+                        self.log(f"Mantra stderr: {stderr.strip()}", "WARNING")
             
-            # Wait for process to complete and get any remaining output
-            stdout, stderr = process.communicate()
-            if stdout:
-                output_lines.append(stdout)
-            
-            # Write output to file
-            with open(output_file, 'w') as f:
-                f.write(''.join(output_lines))
-            
-            if process.returncode != 0 and stderr:
-                self.log(f"Mantra stderr: {stderr.strip()}", "WARNING")
+            except Exception as e:
+                self.log(f"Error with approach {i+1}: {str(e)}", "ERROR")
+                continue
         
-        except Exception as e:
-            self.log(f"Error running mantra: {str(e)}", "ERROR")
+        if not success:
+            self.log("All mantra command approaches failed", "ERROR")
             # Clean up temp file
             if os.path.exists(temp_file):
                 os.remove(temp_file)
