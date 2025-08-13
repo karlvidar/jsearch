@@ -543,18 +543,42 @@ class JSearch:
             self.log("No JS files to analyze", "WARNING")
             return
         
+        self.log(f"Total JS files to analyze: {len(self.js_files)}")
+        
+        # Filter and validate JS URLs before passing to mantra
+        valid_js_files = []
+        for js_file in self.js_files:
+            js_url = js_file.strip()
+            # Basic validation - must be a proper URL and end with .js
+            if (js_url.startswith('http') and 
+                js_url.endswith('.js') and 
+                len(js_url) > 10 and  # Reasonable minimum length
+                ' ' not in js_url):   # No spaces in URL
+                valid_js_files.append(js_url)
+        
+        if len(valid_js_files) != len(self.js_files):
+            filtered_out = len(self.js_files) - len(valid_js_files)
+            self.log(f"Filtered out {filtered_out} invalid URLs, analyzing {len(valid_js_files)} valid JS files", "INFO")
+        
+        if not valid_js_files:
+            self.log("No valid JS files to analyze after filtering", "WARNING")
+            return
+        
         output_file = os.path.join(self.output_path, "mantra_secrets.txt")
         
-        # Create temp file with JS URLs
+        # Create temp file with valid JS URLs
         temp_file = os.path.join(self.output_path, "temp_js_files.txt")
         with open(temp_file, 'w') as f:
-            for js_file in self.js_files:
+            for js_file in valid_js_files:
                 f.write(f"{js_file}\n")
         
-        # Try different command formats for mantra (correct syntax: cat INPUT | mantra | tee OUTPUT)
+        # Add additional mantra options for better handling of large lists and network issues
+        # -t: timeout per request, -c: concurrent workers, -s: silent mode for cleaner output
         commands_to_try = [
-            f"cat {temp_file} | mantra | tee {output_file}",
-            f"type {temp_file} | mantra | tee {output_file}"  # Windows alternative to cat
+            f"cat {temp_file} | mantra -t 10 -c 5 | tee {output_file}",
+            f"type {temp_file} | mantra -t 10 -c 5 | tee {output_file}",  # Windows alternative to cat
+            f"cat {temp_file} | mantra | tee {output_file}",  # Fallback without flags
+            f"type {temp_file} | mantra | tee {output_file}"  # Windows fallback
         ]
         
         success = False
@@ -580,11 +604,31 @@ class JSearch:
                 os.remove(temp_file)
             return
         
+        # Analyze the results and provide detailed statistics
         if os.path.exists(output_file):
             with open(output_file, 'r') as f:
                 content = f.read()
                 if content.strip():
-                    self.log("Mantra analysis complete! Check mantra_secrets.txt for results", "SUCCESS")
+                    # Count successful finds vs errors
+                    lines = content.strip().split('\n')
+                    successful_finds = len([line for line in lines if line.startswith('[+]')])
+                    error_requests = len([line for line in lines if line.startswith('[-]')])
+                    
+                    self.log(f"Mantra analysis complete! Found {successful_finds} secrets", "SUCCESS")
+                    self.log(f"Mantra had {error_requests} failed requests out of {len(valid_js_files)} valid JS files", "INFO")
+                    
+                    if error_requests > 0:
+                        self.log("Some JS files were unreachable (timeouts, 404s, network issues)", "WARNING")
+                        self.log("This is normal - some URLs from gau/katana may be stale or require authentication", "INFO")
+                    
+                    # Show a few sample successful finds
+                    successful_lines = [line for line in lines if line.startswith('[+]')]
+                    if successful_lines:
+                        self.log("Sample secrets found:", "INFO")
+                        for line in successful_lines[:3]:  # Show first 3
+                            print(f"  {line}")
+                        if len(successful_lines) > 3:
+                            print(f"  ... and {len(successful_lines) - 3} more secrets found")
                 else:
                     self.log("No secrets found", "INFO")
         else:
