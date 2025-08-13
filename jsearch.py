@@ -182,10 +182,6 @@ class JSearch:
     
     def _run_ffuf_command(self, command: str, description: str) -> str:
         """Special handling for ffuf commands to prevent hanging with large wordlists"""
-        import select
-        import threading
-        import queue
-        
         try:
             process = subprocess.Popen(
                 command,
@@ -199,41 +195,18 @@ class JSearch:
             
             output_lines = []
             
-            # Use select to check if data is available (Unix-like systems)
-            if hasattr(select, 'select'):
-                while process.poll() is None:
-                    ready, _, _ = select.select([process.stdout], [], [], 1.0)  # 1 second timeout
-                    if ready:
-                        line = process.stdout.readline()
-                        if line:
-                            line = line.strip()
-                            if '[Status:' in line:
-                                print(line)
-                                sys.stdout.flush()
-                            output_lines.append(line + '\n')
-            else:
-                # Fallback for Windows - use threading approach
-                def read_output(process, output_list):
-                    try:
-                        while True:
-                            line = process.stdout.readline()
-                            if not line:
-                                break
-                            line = line.strip()
-                            if '[Status:' in line:
-                                print(line)
-                                sys.stdout.flush()
-                            output_list.append(line + '\n')
-                    except:
-                        pass
-                
-                output_thread = threading.Thread(target=read_output, args=(process, output_lines))
-                output_thread.daemon = True
-                output_thread.start()
-                
-                # Wait for process to complete
-                process.wait()
-                output_thread.join(timeout=5)  # Give thread 5 seconds to finish
+            # Simple approach: just wait for ffuf to completely finish
+            # Show live output but don't exit until process is done
+            while True:
+                line = process.stdout.readline()
+                if not line and process.poll() is not None:
+                    break  # Process finished
+                if line:
+                    line = line.strip()
+                    if '[Status:' in line:
+                        print(line)
+                        sys.stdout.flush()
+                    output_lines.append(line + '\n')
             
             # Get any remaining output
             stdout, stderr = process.communicate()
