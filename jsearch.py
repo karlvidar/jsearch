@@ -632,13 +632,14 @@ class JSearch:
                         line_count += 1
                         last_output_time = time.time()
                         
-                        # Show ALL output from mantra, not just [+] and [-]
-                        print(line)
-                        sys.stdout.flush()
+                        # Only show [+] (secrets found) and [-] (failed requests)
+                        if line.startswith('[+]') or line.startswith('[-]'):
+                            print(line)
+                            sys.stdout.flush()
                         
-                        # Also show progress every 10 lines to confirm it's working
-                        if line_count % 10 == 0:
-                            self.log(f"Mantra output: {line_count} lines processed", "INFO")
+                        # Show progress every 100 lines to confirm it's working (less verbose)
+                        if line_count % 100 == 0:
+                            self.log(f"Mantra processed {line_count} lines", "INFO")
                         
                         output_lines.append(output)
                     else:
@@ -689,31 +690,45 @@ class JSearch:
                 if content.strip():
                     # Count successful finds vs errors
                     lines = content.strip().split('\n')
-                    successful_finds = len([line for line in lines if line.startswith('[+]')])
-                    error_requests = len([line for line in lines if line.startswith('[-]')])
+                    successful_finds = 0
+                    error_requests = 0
+                    
+                    # Count lines properly - look for actual content, not just [+] and [-]
+                    for line in lines:
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if line.startswith('[+]'):
+                            successful_finds += 1
+                        elif line.startswith('[-]'):
+                            error_requests += 1
                     
                     # Calculate processed count (successful + failed)
                     total_processed = successful_finds + error_requests
                     
                     self.log(f"Mantra analysis complete! Found {successful_finds} secrets", "SUCCESS")
-                    self.log(f"Mantra processed {total_processed} out of {len(valid_js_files)} JS files", "INFO")
+                    self.log(f"Mantra processed {total_processed} requests ({successful_finds} successful, {error_requests} failed)", "INFO")
                     
                     if error_requests > 0:
                         self.log(f"Mantra had {error_requests} failed requests (timeouts, 404s, network issues)", "WARNING")
                         self.log("Failed requests are normal - some URLs from gau/katana may be stale or require authentication", "INFO")
                     
-                    # Check if mantra processed significantly fewer files than expected
-                    if total_processed < len(valid_js_files) * 0.5:  # Less than 50% processed
-                        missing = len(valid_js_files) - total_processed
-                        self.log(f"Warning: {missing} JS files may not have been processed by mantra", "WARNING")
-                        self.log("This could indicate mantra encountered issues with the remaining URLs", "WARNING")
+                    # Check processing coverage
+                    if total_processed > 0:
+                        coverage_percent = (total_processed / len(valid_js_files)) * 100
+                        self.log(f"Processed {total_processed} out of {len(valid_js_files)} JS files ({coverage_percent:.1f}% coverage)", "INFO")
+                        
+                        if coverage_percent < 50:
+                            self.log(f"Low coverage - mantra may have stopped early or encountered network issues", "WARNING")
+                    else:
+                        self.log("No requests were processed - this may indicate a configuration issue", "WARNING")
                     
                     # Show a few sample successful finds
-                    successful_lines = [line for line in lines if line.startswith('[+]')]
+                    successful_lines = [line for line in lines if line.strip().startswith('[+]')]
                     if successful_lines:
                         self.log("Sample secrets found:", "INFO")
                         for line in successful_lines[:3]:  # Show first 3
-                            print(f"  {line}")
+                            print(f"  {line.strip()}")
                         if len(successful_lines) > 3:
                             print(f"  ... and {len(successful_lines) - 3} more secrets found")
                 else:
