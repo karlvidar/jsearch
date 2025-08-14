@@ -855,8 +855,8 @@ class JSearch:
             # Step 3: Discover JS files
             print(f"\n{Colors.BOLD}{Colors.BLUE}[3/5] Discovering JS Files{Colors.END}")
             self.discover_js_files_gau()
-            self.discover_js_files_linkfinder()
             self.discover_js_files_katana()
+            self.discover_js_files_linkfinder()
             
             # Step 4: Analyze for secrets
             print(f"\n{Colors.BOLD}{Colors.BLUE}[4/5] Analyzing for Secrets{Colors.END}")

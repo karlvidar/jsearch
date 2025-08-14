@@ -239,8 +239,8 @@ JSearch follows a systematic 5-step process:
 
 3. **Discovering JavaScript Files**
    - GAU searches web archives for historical JavaScript URLs
-   - LinkFinder crawls live sites for JavaScript files and endpoints
    - Katana performs advanced web crawling
+   - LinkFinder crawls live sites for JavaScript files and endpoints
 
 4. **Analyzing for Secrets**
    - Mantra analyzes all discovered JavaScript files for secrets
@@ -413,6 +413,7 @@ You can adjust the following parameters in the script:
 ### 3. JavaScript File Discovery
 - **Gau**: GetAllUrls for historical JS file discovery
 - **Katana**: Modern web crawler for additional JS files
+- **LinkFinder**: Extract JavaScript files and endpoints from live sites
 - **Filtering**: Automatically filters for .js files only
 
 ### 4. Secret Analysis
