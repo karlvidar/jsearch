@@ -1,10 +1,10 @@
-# jsearch - JavaScript Search Tool
+# JSearch - JavaScript Search Tool
 
 <div align="center">
 
 ![jsearch Banner](assets/Banner.png)
 
-**A comprehensive subdomain discovery and JavaScript analysis tool**
+**A comprehensive subdomain discovery and JavaScript analysis tool for bug bounty reconnaissance**
 
 [![Python 3.6+](https://img.shields.io/badge/python-3.6+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
@@ -13,21 +13,62 @@
 
 ## 🔍 Overview
 
-jsearch is an automated reconnaissance tool designed for bug bounty hunters and penetration testers. It combines multiple powerful tools to perform comprehensive subdomain discovery, live domain verification, JavaScript file extraction, and secret analysis in a streamlined workflow.
+JSearch is an automated reconnaissance tool designed for bug bounty hunters and penetration testers. It combines multiple powerful tools to perform comprehensive subdomain discovery, live domain verification, JavaScript file extraction, and secret analysis in a streamlined workflow.
 
 ## ✨ Features
 
-- **Subdomain Discovery**: Uses subfinder and ffuf with comprehensive wordlists
-- **Live Domain Verification**: Validates discovered subdomains using httpx
-- **JavaScript File Discovery**: Extracts JS files using gau and katana
-- **Secret Analysis**: Analyzes JavaScript files for potential secrets using mantra
-- **Vulnerability Scanning**: Optional nuclei integration for vulnerability detection
-- **Duplicate Prevention**: Automatically removes duplicates across different tools
-- **Comprehensive Reporting**: JSON output with detailed results
+### 🌐 Subdomain Discovery
+- **Subfinder**: Comprehensive subdomain enumeration from various sources
+- **FFUF**: DNS fuzzing with wordlists for additional subdomain discovery
+- **Live Validation**: HTTPx verification of discovered subdomains
+
+### 📄 JavaScript File Discovery
+- **GAU (GetAllUrls)**: Historical URL discovery from web archives
+- **LinkFinder**: Extract JavaScript files and endpoints from live sites
+- **Katana**: Advanced web crawling for JavaScript file discovery
+
+### 🔒 Security Analysis
+- **Mantra**: Secret analysis of JavaScript files (API keys, tokens, etc.)
+- **Nuclei**: Vulnerability scanning with customizable templates
+
+### 🎨 User Experience
+- Real-time output with color-coded results
+- Comprehensive logging and progress tracking
+- Organized output directory structure
+- JSON export for automation and integration
 
 ## 📦 Installation
 
-### Kali Linux / Ubuntu / Debian
+### Prerequisites
+
+Install the required tools:
+
+```bash
+# Install Go tools
+go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest
+go install github.com/ffuf/ffuf@latest
+go install github.com/lc/gau/v2/cmd/gau@latest
+go install github.com/projectdiscovery/httpx/cmd/httpx@latest
+go install github.com/projectdiscovery/katana/cmd/katana@latest
+go install github.com/projectdiscovery/nuclei/v2/cmd/nuclei@latest
+
+# Install Python dependencies
+pip3 install requests
+
+# Install Mantra (JavaScript secret analysis)
+git clone https://github.com/brosck/mantra
+cd mantra
+# Follow installation instructions from the repository
+
+# Install LinkFinder
+git clone https://github.com/GerbenJavado/LinkFinder
+cd LinkFinder
+pip3 install -r requirements.txt
+```
+
+### Install JSearch
+
+#### Linux / macOS
 ```bash
 # 1. Clone the repository
 git clone https://github.com/karlvidar/jsearch.git
@@ -135,27 +176,173 @@ git clone https://github.com/danielmiessler/SecLists.git /usr/local/share/wordli
 ### Basic Usage
 
 ```bash
+# Basic scan
 jsearch -u example.com
+
+# Specify output directory
+jsearch -u example.com -p /tmp/example_scan
+
+# Export results to JSON
+jsearch -u example.com -o results.json
 ```
 
-### Advanced Usage
+### Advanced Options
 
 ```bash
-# Specify custom output directory
-jsearch -u example.com -p /tmp/bug_bounty_results
+# Skip specific tools
+jsearch -u example.com --skip-ffuf --skip-nuclei
 
-# Save results to specific file
-jsearch -u example.com -o results.json
+# Use custom LinkFinder path
+jsearch -u example.com --linkfinder-path /opt/LinkFinder/linkfinder.py
+
+# Skip JavaScript file discovery tools
+jsearch -u example.com --skip-gau --skip-katana --skip-linkfinder
+
+# Skip secret analysis
+jsearch -u example.com --skip-mantra
 ```
 
 ### Command Line Options
 
-| Option | Description | Example |
-|--------|-------------|---------|
-| `-u, --url` | Target domain (required) | `-u example.com` |
-| `-p, --path` | Custom output directory | `-p /tmp/results` |
-| `-o, --output` | Output file for results | `-o results.json` |
-| `-h, --help` | Show help message | `-h` |
+```
+Required:
+-u, --url           Target URL/domain
+
+Output:
+-p, --path          Output directory path
+-o, --output        Output file for results (JSON format)
+
+Configuration:
+--linkfinder-path   Custom path to LinkFinder script
+
+Tool Control:
+--skip-ffuf         Skip FFUF subdomain discovery
+--skip-gau          Skip GAU JavaScript file discovery
+--skip-linkfinder   Skip LinkFinder JavaScript file discovery
+--skip-katana       Skip Katana JavaScript file discovery
+--skip-mantra       Skip Mantra secret analysis
+--skip-nuclei       Skip Nuclei vulnerability scanning
+```
+
+## 🔄 Workflow
+
+JSearch follows a systematic 5-step process:
+
+1. **Gathering Subdomains**
+   - Subfinder discovers subdomains from various sources
+   - FFUF performs DNS fuzzing for additional discovery
+
+2. **Checking Live Domains**
+   - HTTPx validates which subdomains are live and accessible
+
+3. **Discovering JavaScript Files**
+   - GAU searches web archives for historical JavaScript URLs
+   - LinkFinder crawls live sites for JavaScript files and endpoints
+   - Katana performs advanced web crawling
+
+4. **Analyzing for Secrets**
+   - Mantra analyzes all discovered JavaScript files for secrets
+   - Displays API keys, tokens, and sensitive information
+
+5. **Scanning for Vulnerabilities**
+   - Nuclei runs vulnerability scans on live domains
+   - Focuses on medium, high, and critical severity issues
+
+## 📂 Output Structure
+
+JSearch creates an organized output directory:
+
+```
+jsearch_example_com/
+├── subfinder_results.txt      # Subdomain discovery results
+├── ffuf_results.txt           # FFUF fuzzing results
+├── live_domains.txt           # Live domain validation
+├── katana_js_files.txt        # Katana JavaScript discovery
+├── mantra_secrets.txt         # Secret analysis results
+├── nuclei_results.txt         # Vulnerability scan results
+└── jsearch_summary.json       # Complete results summary
+```
+
+## 📋 Example Output
+
+```
+[14:25:33] [INFO] Checking tool availability...
+[14:25:33] [SUCCESS] All required tools are available
+
+[1/5] Gathering Subdomains
+[SUBDOMAIN] api.example.com
+[SUBDOMAIN] admin.example.com
+[SUBDOMAIN] www.example.com (NEW)
+
+[2/5] Checking Live Domains
+[LIVE] https://api.example.com
+[LIVE] https://www.example.com
+
+[3/5] Discovering JavaScript Files
+[JS FILE] https://www.example.com/assets/app.js
+[JS FILE] https://api.example.com/static/main.js
+
+[4/5] Analyzing for Secrets
+███╗   ███╗ █████╗ ███╗   ██╗████████╗██████╗  █████╗
+████╗ ████║██╔══██╗████╗  ██║╚══██╔══╝██╔══██╗██╔══██╗
+██╔████╔██║███████║██╔██╗ ██║   ██║   ██████╔╝███████║
+██║╚██╔╝██║██╔══██║██║╚██╗██║   ██║   ██╔══██╗██╔══██║
+██║ ╚═╝ ██║██║  ██║██║ ╚████║   ██║   ██║  ██║██║  ██║
+╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
+[+] https://www.example.com/app.js [AIzaSyDxVxKt8B2nGfH7X9cL4mP5qR8sT3uY6vW]
+
+=== JSEARCH SUMMARY ===
+Target: example.com
+Subdomains found: 15
+Live domains: 8
+JS files found: 47
+Output directory: jsearch_example_com
+```
+
+## 🔧 Dependencies
+
+### Required Tools
+- **subfinder**: Subdomain discovery
+- **ffuf**: DNS fuzzing
+- **gau**: Historical URL discovery
+- **httpx**: HTTP toolkit
+- **katana**: Web crawling
+- **nuclei**: Vulnerability scanning
+- **mantra**: JavaScript secret analysis
+- **LinkFinder**: JavaScript file discovery
+
+### System Requirements
+- Python 3.6+
+- Go 1.19+
+- Internet connection for subdomain discovery
+- Sufficient disk space for results
+
+## 🛠️ Troubleshooting
+
+### Tool Not Found Errors
+```bash
+# Ensure Go bin is in PATH
+export PATH=$PATH:$(go env GOPATH)/bin
+
+# Verify tool installation
+subfinder -h
+ffuf -h
+```
+
+### LinkFinder Issues
+```bash
+# Install in common location
+git clone https://github.com/GerbenJavado/LinkFinder /opt/LinkFinder
+pip3 install -r /opt/LinkFinder/requirements.txt
+
+# Or specify custom path
+jsearch -u example.com --linkfinder-path /custom/path/linkfinder.py
+```
+
+### Permission Issues
+```bash
+chmod +x jsearch.py
+```
 
 ## 📊 Output Structure
 

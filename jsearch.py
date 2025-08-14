@@ -40,10 +40,12 @@ class Colors:
     END = '\033[0m'
 
 class JSearch:
-    def __init__(self, target_url: str, output_path: str = None, output_file: str = None):
+    def __init__(self, target_url: str, output_path: str = None, output_file: str = None, 
+                 linkfinder_path: str = None):
         self.target_url = target_url.replace('https://', '').replace('http://', '').strip('/')
         self.output_path = output_path or f"jsearch_{self.target_url.replace('.', '_')}"
         self.output_file = output_file
+        self.linkfinder_path = linkfinder_path
         self.subdomains: Set[str] = set()
         self.live_domains: Set[str] = set()
         self.live_domains_ordered: List[str] = []  # Maintain order for processing
@@ -263,6 +265,22 @@ class JSearch:
                 missing_tools.append(tool)
         
         # Check for LinkFinder (python script)
+        linkfinder_found = False
+        linkfinder_paths = [
+            "/opt/LinkFinder/linkfinder.py",
+            "/usr/local/bin/linkfinder.py", 
+            "./linkfinder.py",
+            "linkfinder.py"
+        ]
+        
+        for path in linkfinder_paths:
+            if os.path.exists(path):
+                linkfinder_found = True
+                break
+        
+        if not linkfinder_found:
+            missing_tools.append("LinkFinder")
+        
         try:
             result = subprocess.run(["python3", "-c", "import requests"], capture_output=True, timeout=5)
             if result.returncode != 0:
@@ -555,18 +573,24 @@ class JSearch:
             return
         
         # Check if LinkFinder is available
-        linkfinder_paths = [
-            "/opt/LinkFinder/linkfinder.py",
-            "/usr/local/bin/linkfinder.py", 
-            "./linkfinder.py",
-            "linkfinder.py"
-        ]
-        
         linkfinder_path = None
-        for path in linkfinder_paths:
-            if os.path.exists(path):
-                linkfinder_path = path
-                break
+        
+        # Use custom path if provided
+        if self.linkfinder_path and os.path.exists(self.linkfinder_path):
+            linkfinder_path = self.linkfinder_path
+        else:
+            # Check common installation paths
+            linkfinder_paths = [
+                "/opt/LinkFinder/linkfinder.py",
+                "/usr/local/bin/linkfinder.py", 
+                "./linkfinder.py",
+                "linkfinder.py"
+            ]
+            
+            for path in linkfinder_paths:
+                if os.path.exists(path):
+                    linkfinder_path = path
+                    break
         
         if not linkfinder_path:
             self.log("LinkFinder not found, skipping LinkFinder JS discovery", "WARNING")
@@ -749,7 +773,16 @@ class JSearch:
             "js_files_found": len(self.js_files),
             "subdomains": list(self.subdomains),
             "live_domains": list(self.live_domains),
-            "js_files": list(self.js_files)
+            "js_files": list(self.js_files),
+            "tools_used": {
+                "subfinder": True,
+                "ffuf": not self.skip_ffuf,
+                "gau": not self.skip_gau,
+                "linkfinder": not self.skip_linkfinder,
+                "katana": not self.skip_katana,
+                "mantra": not self.skip_mantra,
+                "nuclei": not self.skip_nuclei
+            }
         }
         
         # Save summary as JSON
@@ -828,12 +861,22 @@ Examples:
   jsearch -u example.com
   jsearch -u example.com -p /tmp/results
   jsearch -u example.com -o results.json
+  jsearch -u example.com --skip-linkfinder
         """
     )
     
     parser.add_argument('-u', '--url', required=True, help='Target URL/domain')
     parser.add_argument('-p', '--path', help='Output directory path')
     parser.add_argument('-o', '--output', help='Output file for results')
+    parser.add_argument('--linkfinder-path', help='Custom path to LinkFinder script')
+    
+    # Tool skip flags
+    parser.add_argument('--skip-ffuf', action='store_true', help='Skip ffuf subdomain discovery')
+    parser.add_argument('--skip-gau', action='store_true', help='Skip gau JS file discovery')
+    parser.add_argument('--skip-linkfinder', action='store_true', help='Skip LinkFinder JS file discovery')
+    parser.add_argument('--skip-katana', action='store_true', help='Skip katana JS file discovery')
+    parser.add_argument('--skip-mantra', action='store_true', help='Skip mantra secret analysis')
+    parser.add_argument('--skip-nuclei', action='store_true', help='Skip nuclei vulnerability scanning')
     
     args = parser.parse_args()
     
@@ -841,7 +884,15 @@ Examples:
         parser.print_help()
         return
     
-    jsearch = JSearch(args.url, args.path, args.output)
+    jsearch = JSearch(args.url, args.path, args.output, args.linkfinder_path)
+    
+    # Apply skip flags
+    jsearch.skip_ffuf = args.skip_ffuf
+    jsearch.skip_gau = args.skip_gau
+    jsearch.skip_linkfinder = args.skip_linkfinder
+    jsearch.skip_katana = args.skip_katana
+    jsearch.skip_mantra = args.skip_mantra
+    jsearch.skip_nuclei = args.skip_nuclei
     
     start_time = time.time()
     success = jsearch.run()
