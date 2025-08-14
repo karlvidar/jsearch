@@ -39,7 +39,59 @@ JSearch is an automated reconnaissance tool designed for bug bounty hunters and 
 
 ## 📦 Installation
 
-### Prerequisites
+### Install JSearch First
+
+#### Linux / macOS
+```bash
+# 1. Clone the repository
+git clone https://github.com/karlvidar/jsearch.git
+cd jsearch
+
+# 2. Make executable
+chmod +x jsearch.py
+
+# 3. Create global alias
+cd ..
+echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bashrc
+source ~/.bashrc
+
+# 4. Test the installation
+jsearch --help
+```
+
+#### macOS (Alternative Shell Setup)
+```bash
+# 1. Clone the repository
+git clone https://github.com/karlvidar/jsearch.git
+cd jsearch
+
+# 2. Make executable
+chmod +x jsearch.py
+
+# 3. Create global alias (for bash)
+cd ..
+echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bash_profile
+source ~/.bash_profile
+
+# For zsh users (default on newer macOS)
+echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.zshrc
+source ~/.zshrc
+
+# 4. Test the installation
+jsearch --help
+```
+
+#### Windows
+```powershell
+# 1. Clone the repository
+git clone https://github.com/karlvidar/jsearch.git
+cd jsearch
+
+# 2. Run directly
+python jsearch.py -u example.com
+```
+
+### Prerequisites - Install Required Tools
 
 Install the required tools:
 
@@ -64,60 +116,9 @@ cd mantra
 git clone https://github.com/GerbenJavado/LinkFinder
 cd LinkFinder
 pip3 install -r requirements.txt
+pip3 install jsbeautifier
 
 # Note: LinkFinder will be automatically detected in ~/LinkFinder/
-```
-
-### Install JSearch
-
-#### Linux / macOS
-```bash
-# 1. Clone the repository
-git clone https://github.com/karlvidar/jsearch.git
-cd jsearch
-
-# 2. Make executable
-chmod +x jsearch.py
-
-# 3. Create global alias
-cd ..
-echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bashrc
-source ~/.bashrc
-
-# 4. Test the installation
-jsearch --help
-```
-
-### macOS
-```bash
-# 1. Clone the repository
-git clone https://github.com/karlvidar/jsearch.git
-cd jsearch
-
-# 2. Make executable
-chmod +x jsearch.py
-
-# 3. Create global alias (for bash)
-cd ..
-echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.bash_profile
-source ~/.bash_profile
-
-# For zsh users (default on newer macOS)
-echo "alias jsearch='python3 $(pwd)/jsearch/jsearch.py'" >> ~/.zshrc
-source ~/.zshrc
-
-# 4. Test the installation
-jsearch --help
-```
-
-### Windows
-```powershell
-# 1. Clone the repository
-git clone https://github.com/karlvidar/jsearch.git
-cd jsearch
-
-# 2. Run directly
-python jsearch.py -u example.com
 ```
 
 ## 🛠️ Install Required Tools
@@ -338,10 +339,12 @@ cd ~
 git clone https://github.com/GerbenJavado/LinkFinder
 cd LinkFinder
 pip3 install -r requirements.txt
+pip3 install jsbeautifier
 
 # Install in common system location
 git clone https://github.com/GerbenJavado/LinkFinder /opt/LinkFinder
 pip3 install -r /opt/LinkFinder/requirements.txt
+pip3 install jsbeautifier
 
 # Or specify custom path
 jsearch -u example.com --linkfinder-path /custom/path/linkfinder.py
