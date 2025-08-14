@@ -39,7 +39,7 @@ JSearch is an automated reconnaissance tool designed for bug bounty hunters and 
 
 ## 📦 Installation
 
-### Install JSearch First
+### Install jsearch
 
 #### Linux / macOS
 ```bash
