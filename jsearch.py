@@ -63,6 +63,7 @@ class JSearch:
         self.skip_nuclei = False
         self.skip_ffuf = False
         self.skip_gau = False
+        self.skip_linkfinder = False
         self.skip_mantra = False
         
         # Create output directory
@@ -261,11 +262,21 @@ class JSearch:
             except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
                 missing_tools.append(tool)
         
+        # Check for LinkFinder (python script)
+        try:
+            result = subprocess.run(["python3", "-c", "import requests"], capture_output=True, timeout=5)
+            if result.returncode != 0:
+                missing_tools.append("python3-requests (for LinkFinder)")
+        except (subprocess.TimeoutExpired, FileNotFoundError, PermissionError):
+            missing_tools.append("python3 (for LinkFinder)")
+        
         if missing_tools:
             self.log(f"Missing tools: {', '.join(missing_tools)}", "ERROR")
             self.log("Please install missing tools before running jsearch", "ERROR")
             if "mantra" in missing_tools:
                 self.log("For mantra, install from: https://github.com/brosck/mantra", "INFO")
+            if any("LinkFinder" in tool for tool in missing_tools):
+                self.log("For LinkFinder, install: pip3 install requests and download from: https://github.com/GerbenJavado/LinkFinder", "INFO")
             return False
         
         self.log("All required tools are available", "SUCCESS")
@@ -531,6 +542,89 @@ class JSearch:
         if os.path.exists(temp_file):
             os.remove(temp_file)
     
+    def discover_js_files_linkfinder(self):
+        """Discover JS files using LinkFinder"""
+        if self.skip_linkfinder:
+            self.log("Skipping LinkFinder JS file discovery", "INFO")
+            return
+            
+        self.log("Discovering JS files with LinkFinder...")
+        
+        if not self.live_domains_ordered:
+            self.log("No live domains to scan", "WARNING")
+            return
+        
+        # Check if LinkFinder is available
+        linkfinder_paths = [
+            "/opt/LinkFinder/linkfinder.py",
+            "/usr/local/bin/linkfinder.py", 
+            "./linkfinder.py",
+            "linkfinder.py"
+        ]
+        
+        linkfinder_path = None
+        for path in linkfinder_paths:
+            if os.path.exists(path):
+                linkfinder_path = path
+                break
+        
+        if not linkfinder_path:
+            self.log("LinkFinder not found, skipping LinkFinder JS discovery", "WARNING")
+            self.log("Download LinkFinder from: https://github.com/GerbenJavado/LinkFinder", "INFO")
+            return
+        
+        total_js_files_found = 0
+        initial_count = len(self.js_files)
+        
+        for domain in self.live_domains_ordered:
+            self.log(f"Running: LinkFinder JS discovery for {domain}")
+            
+            # Run LinkFinder for each domain
+            command = f"python3 {linkfinder_path} -i {domain} -o cli"
+            
+            try:
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
+                
+                js_files_for_domain = 0
+                
+                # Read output line by line as it comes
+                while True:
+                    output = process.stdout.readline()
+                    if output == '' and process.poll() is not None:
+                        break
+                    if output:
+                        line = output.strip()
+                        # LinkFinder outputs URLs - filter for JS files
+                        if (line.startswith('http') and 
+                            (line.endswith('.js') or '.js?' in line) and 
+                            line not in self.js_files):
+                            # Clean the URL (remove query parameters for deduplication)
+                            clean_url = line.split('?')[0] if '?' in line else line
+                            if clean_url.endswith('.js') and clean_url not in self.js_files:
+                                self.js_files.add(clean_url)
+                                js_files_for_domain += 1
+                                total_js_files_found += 1
+                                print(f"{Colors.YELLOW}[JS FILE]{Colors.END} {clean_url}")
+                
+                # Check for any stderr (warnings)
+                stderr = process.stderr.read()
+                if stderr and "error" in stderr.lower():
+                    self.log(f"Warning from LinkFinder for {domain}: {stderr.strip()}", "WARNING")
+                
+                if js_files_for_domain > 0:
+                    print(f"{Colors.GREEN}Found {js_files_for_domain} JS files for {domain}{Colors.END}")
+                else:
+                    print(f"{Colors.RED}No new JS files found for {domain}{Colors.END}")
+                    
+            except Exception as e:
+                self.log(f"Error running LinkFinder for {domain}: {str(e)}", "ERROR")
+        
+        new_count = len(self.js_files) - initial_count
+        if new_count > 0:
+            self.log(f"Found {new_count} new JS files with LinkFinder", "SUCCESS")
+        else:
+            self.log("No new JS files found with LinkFinder", "WARNING")
+    
     def analyze_secrets_mantra(self):
         """Analyze JS files for secrets using mantra"""
         if self.skip_mantra:
@@ -700,6 +794,7 @@ class JSearch:
             # Step 3: Discover JS files
             print(f"\n{Colors.BOLD}{Colors.BLUE}[3/5] Discovering JS Files{Colors.END}")
             self.discover_js_files_gau()
+            self.discover_js_files_linkfinder()
             self.discover_js_files_katana()
             
             # Step 4: Analyze for secrets
