@@ -64,6 +64,8 @@ cd mantra
 git clone https://github.com/GerbenJavado/LinkFinder
 cd LinkFinder
 pip3 install -r requirements.txt
+
+# Note: LinkFinder will be automatically detected in ~/LinkFinder/
 ```
 
 ### Install JSearch
@@ -331,7 +333,13 @@ ffuf -h
 
 ### LinkFinder Issues
 ```bash
-# Install in common location
+# Install in home directory (automatically detected)
+cd ~
+git clone https://github.com/GerbenJavado/LinkFinder
+cd LinkFinder
+pip3 install -r requirements.txt
+
+# Install in common system location
 git clone https://github.com/GerbenJavado/LinkFinder /opt/LinkFinder
 pip3 install -r /opt/LinkFinder/requirements.txt
 

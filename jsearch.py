@@ -266,12 +266,26 @@ class JSearch:
         
         # Check for LinkFinder (python script)
         linkfinder_found = False
+        home_dir = os.path.expanduser("~")
+        
+        # Build comprehensive list of possible LinkFinder locations
         linkfinder_paths = [
             "/opt/LinkFinder/linkfinder.py",
-            "/usr/local/bin/linkfinder.py", 
+            "/usr/local/bin/linkfinder.py",
+            f"{home_dir}/LinkFinder/linkfinder.py",
             "./linkfinder.py",
             "linkfinder.py"
         ]
+        
+        # Add WSL paths if on Windows
+        import platform
+        if platform.system() == "Windows":
+            # Try WSL paths - common WSL home directories
+            wsl_paths = [
+                "/mnt/c/Users/{}/LinkFinder/linkfinder.py".format(os.environ.get('USERNAME', 'user')),
+                "/home/{}/LinkFinder/linkfinder.py".format(os.environ.get('USER', 'user')),
+            ]
+            linkfinder_paths.extend(wsl_paths)
         
         for path in linkfinder_paths:
             if os.path.exists(path):
@@ -580,12 +594,26 @@ class JSearch:
             linkfinder_path = self.linkfinder_path
         else:
             # Check common installation paths
+            home_dir = os.path.expanduser("~")
+            
+            # Build comprehensive list of possible LinkFinder locations
             linkfinder_paths = [
                 "/opt/LinkFinder/linkfinder.py",
-                "/usr/local/bin/linkfinder.py", 
+                "/usr/local/bin/linkfinder.py",
+                f"{home_dir}/LinkFinder/linkfinder.py",
                 "./linkfinder.py",
                 "linkfinder.py"
             ]
+            
+            # Add WSL paths if on Windows
+            import platform
+            if platform.system() == "Windows":
+                # Try WSL paths - common WSL home directories
+                wsl_paths = [
+                    "/mnt/c/Users/{}/LinkFinder/linkfinder.py".format(os.environ.get('USERNAME', 'user')),
+                    "/home/{}/LinkFinder/linkfinder.py".format(os.environ.get('USER', 'user')),
+                ]
+                linkfinder_paths.extend(wsl_paths)
             
             for path in linkfinder_paths:
                 if os.path.exists(path):
