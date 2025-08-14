@@ -644,8 +644,9 @@ class JSearch:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
                 
                 endpoints_found = 0
+                all_endpoints = []
                 
-                # Save LinkFinder output to file and count endpoints
+                # Save LinkFinder output to file and collect all endpoints
                 with open(linkfinder_output_file, 'w') as output_file:
                     while True:
                         output = process.stdout.readline()
@@ -655,10 +656,15 @@ class JSearch:
                             line = output.strip()
                             if line and not line.startswith('['):  # Skip LinkFinder banner lines
                                 output_file.write(f"{line}\n")
+                                all_endpoints.append(line)
                                 endpoints_found += 1
-                                # Show some sample endpoints (first 10)
-                                if endpoints_found <= 10:
-                                    print(f"{Colors.LIGHT_BLUE}[ENDPOINT]{Colors.END} {line}")
+                
+                # Show all endpoints found by LinkFinder
+                if endpoints_found > 0:
+                    self.log(f"All {endpoints_found} endpoints/URLs extracted by LinkFinder:", "INFO")
+                    for i, endpoint in enumerate(all_endpoints, 1):
+                        print(f"  {i:2d}. {endpoint}")
+                    print()  # Add blank line for readability
                 
                 # Check for any stderr (warnings)
                 stderr = process.stderr.read()
@@ -667,8 +673,6 @@ class JSearch:
                 
                 if endpoints_found > 0:
                     self.log(f"Found {endpoints_found} endpoints/URLs with LinkFinder", "SUCCESS")
-                    if endpoints_found > 10:
-                        print(f"{Colors.GRAY}... and {endpoints_found - 10} more endpoints (saved to {linkfinder_output_file}){Colors.END}")
                 else:
                     self.log("No endpoints found with LinkFinder", "WARNING")
                     
@@ -726,13 +730,6 @@ class JSearch:
         # Debug: show first few URLs and file stats
         self.log(f"Created temp file: {temp_file}", "INFO")
         self.log(f"File size: {os.path.getsize(temp_file)} bytes", "INFO")
-        
-        # Show first 3 URLs for debugging
-        with open(temp_file, 'r') as f:
-            first_few = f.readlines()[:3]
-            self.log("First 3 URLs to analyze:", "INFO")
-            for i, url in enumerate(first_few, 1):
-                print(f"  {i}. {url.strip()}")
         
         command = f"cat {temp_file} | mantra | tee {output_file}"
         self.log(f"Trying command: {command}")
