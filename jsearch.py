@@ -575,15 +575,15 @@ class JSearch:
             os.remove(temp_file)
     
     def discover_js_files_linkfinder(self):
-        """Discover JS files using LinkFinder"""
+        """Analyze collected JS files with LinkFinder to extract endpoints and URLs"""
         if self.skip_linkfinder:
-            self.log("Skipping LinkFinder JS file discovery", "INFO")
+            self.log("Skipping LinkFinder endpoint analysis", "INFO")
             return
             
-        self.log("Discovering JS files with LinkFinder...")
+        self.log("Analyzing JS files with LinkFinder to extract endpoints...")
         
-        if not self.live_domains_ordered:
-            self.log("No live domains to scan", "WARNING")
+        if not self.js_files:
+            self.log("No JS files to analyze with LinkFinder", "WARNING")
             return
         
         # Check if LinkFinder is available
@@ -621,61 +621,66 @@ class JSearch:
                     break
         
         if not linkfinder_path:
-            self.log("LinkFinder not found, skipping LinkFinder JS discovery", "WARNING")
+            self.log("LinkFinder not found, skipping endpoint analysis", "WARNING")
             self.log("Download LinkFinder from: https://github.com/GerbenJavado/LinkFinder", "INFO")
             return
         
-        total_js_files_found = 0
-        initial_count = len(self.js_files)
+        # Create a temp file with all JS URLs for LinkFinder to analyze
+        temp_js_file = os.path.join(self.output_path, "temp_js_urls.txt")
+        linkfinder_output_file = os.path.join(self.output_path, "linkfinder_endpoints.txt")
         
-        for domain in self.live_domains_ordered:
-            self.log(f"Running: LinkFinder JS discovery for {domain}")
+        try:
+            # Write JS URLs to temp file
+            with open(temp_js_file, 'w') as f:
+                for js_url in self.js_files:
+                    f.write(f"{js_url}\n")
             
-            # Run LinkFinder for each domain
-            command = f"python3 {linkfinder_path} -i {domain} -o cli"
+            self.log(f"Analyzing {len(self.js_files)} JS files for endpoints and URLs...")
+            
+            # Run LinkFinder on the JS files to extract endpoints
+            command = f"python3 {linkfinder_path} -i {temp_js_file} -o cli"
             
             try:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, universal_newlines=True)
                 
-                js_files_for_domain = 0
+                endpoints_found = 0
                 
-                # Read output line by line as it comes
-                while True:
-                    output = process.stdout.readline()
-                    if output == '' and process.poll() is not None:
-                        break
-                    if output:
-                        line = output.strip()
-                        # LinkFinder outputs URLs - filter for JS files
-                        if (line.startswith('http') and 
-                            (line.endswith('.js') or '.js?' in line) and 
-                            line not in self.js_files):
-                            # Clean the URL (remove query parameters for deduplication)
-                            clean_url = line.split('?')[0] if '?' in line else line
-                            if clean_url.endswith('.js') and clean_url not in self.js_files:
-                                self.js_files.add(clean_url)
-                                js_files_for_domain += 1
-                                total_js_files_found += 1
-                                print(f"{Colors.YELLOW}[JS FILE]{Colors.END} {clean_url}")
+                # Save LinkFinder output to file and count endpoints
+                with open(linkfinder_output_file, 'w') as output_file:
+                    while True:
+                        output = process.stdout.readline()
+                        if output == '' and process.poll() is not None:
+                            break
+                        if output:
+                            line = output.strip()
+                            if line and not line.startswith('['):  # Skip LinkFinder banner lines
+                                output_file.write(f"{line}\n")
+                                endpoints_found += 1
+                                # Show some sample endpoints (first 10)
+                                if endpoints_found <= 10:
+                                    print(f"{Colors.LIGHT_BLUE}[ENDPOINT]{Colors.END} {line}")
                 
                 # Check for any stderr (warnings)
                 stderr = process.stderr.read()
                 if stderr and "error" in stderr.lower():
-                    self.log(f"Warning from LinkFinder for {domain}: {stderr.strip()}", "WARNING")
+                    self.log(f"Warning from LinkFinder: {stderr.strip()}", "WARNING")
                 
-                if js_files_for_domain > 0:
-                    print(f"{Colors.GREEN}Found {js_files_for_domain} JS files for {domain}{Colors.END}")
+                if endpoints_found > 0:
+                    self.log(f"Found {endpoints_found} endpoints/URLs with LinkFinder", "SUCCESS")
+                    if endpoints_found > 10:
+                        print(f"{Colors.GRAY}... and {endpoints_found - 10} more endpoints (saved to {linkfinder_output_file}){Colors.END}")
                 else:
-                    print(f"{Colors.RED}No new JS files found for {domain}{Colors.END}")
+                    self.log("No endpoints found with LinkFinder", "WARNING")
                     
             except Exception as e:
-                self.log(f"Error running LinkFinder for {domain}: {str(e)}", "ERROR")
-        
-        new_count = len(self.js_files) - initial_count
-        if new_count > 0:
-            self.log(f"Found {new_count} new JS files with LinkFinder", "SUCCESS")
-        else:
-            self.log("No new JS files found with LinkFinder", "WARNING")
+                self.log(f"Error running LinkFinder: {str(e)}", "ERROR")
+            
+            # Clean up temp file
+            if os.path.exists(temp_js_file):
+                os.remove(temp_js_file)
+                
+        except Exception as e:
+            self.log(f"Error preparing LinkFinder analysis: {str(e)}", "ERROR")
     
     def analyze_secrets_mantra(self):
         """Analyze JS files for secrets using mantra"""

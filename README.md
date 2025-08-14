@@ -24,8 +24,8 @@ JSearch is an automated reconnaissance tool designed for bug bounty hunters and 
 
 ### 📄 JavaScript File Discovery
 - **GAU (GetAllUrls)**: Historical URL discovery from web archives
-- **LinkFinder**: Extract JavaScript files and endpoints from live sites
 - **Katana**: Advanced web crawling for JavaScript file discovery
+- **LinkFinder**: Analyze collected JS files to extract endpoints and hidden URLs
 
 ### 🔒 Security Analysis
 - **Mantra**: Secret analysis of JavaScript files (API keys, tokens, etc.)
@@ -221,7 +221,7 @@ Configuration:
 Tool Control:
 --skip-ffuf         Skip FFUF subdomain discovery
 --skip-gau          Skip GAU JavaScript file discovery
---skip-linkfinder   Skip LinkFinder JavaScript file discovery
+--skip-linkfinder   Skip LinkFinder endpoint analysis
 --skip-katana       Skip Katana JavaScript file discovery
 --skip-mantra       Skip Mantra secret analysis
 --skip-nuclei       Skip Nuclei vulnerability scanning
@@ -241,7 +241,7 @@ JSearch follows a systematic 5-step process:
 3. **Discovering JavaScript Files**
    - GAU searches web archives for historical JavaScript URLs
    - Katana performs advanced web crawling
-   - LinkFinder crawls live sites for JavaScript files and endpoints
+   - LinkFinder analyzes collected JS files to extract endpoints and hidden URLs
 
 4. **Analyzing for Secrets**
    - Mantra analyzes all discovered JavaScript files for secrets
@@ -260,7 +260,9 @@ jsearch_example_com/
 ├── subfinder_results.txt      # Subdomain discovery results
 ├── ffuf_results.txt           # FFUF fuzzing results
 ├── live_domains.txt           # Live domain validation
-├── katana_js_files.txt        # Katana JavaScript discovery
+├── gau_js_files.txt           # JS files from gau
+├── katana_js_files.txt        # JS files from katana
+├── linkfinder_endpoints.txt   # Endpoints extracted from JS files
 ├── mantra_secrets.txt         # Secret analysis results
 ├── nuclei_results.txt         # Vulnerability scan results
 └── jsearch_summary.json       # Complete results summary
@@ -365,9 +367,10 @@ jsearch_example_com/
 ├── ffuf_results.json         # Ffuf fuzzing results
 ├── live_domains.txt          # Live domain verification
 ├── gau_js_files.txt          # JS files from gau
-├── katana_js_files.txt       # JS files from katana (if available)
+├── katana_js_files.txt       # JS files from katana
+├── linkfinder_endpoints.txt   # Endpoints extracted from JS files
 ├── mantra_secrets.txt        # Secret analysis results
-├── nuclei_results.txt        # Vulnerability scan results (if available)
+├── nuclei_results.txt        # Vulnerability scan results
 └── jsearch_summary.json      # Consolidated summary
 ```
 
@@ -416,7 +419,7 @@ You can adjust the following parameters in the script:
 ### 3. JavaScript File Discovery
 - **Gau**: GetAllUrls for historical JS file discovery
 - **Katana**: Modern web crawler for additional JS files
-- **LinkFinder**: Extract JavaScript files and endpoints from live sites
+- **LinkFinder**: Analyze JS files to extract endpoints, API paths, and hidden URLs
 - **Filtering**: Automatically filters for .js files only
 
 ### 4. Secret Analysis
